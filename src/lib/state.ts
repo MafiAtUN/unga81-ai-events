@@ -3,6 +3,7 @@ import type { Item, Meta, Statement } from './types';
 import type { Facet, SeatMode } from './layout';
 import { FACETS } from './layout';
 import { fold, lcFirst, shortDate, day } from './data';
+import { ENTITY_KEYS, entityByKey } from './entities';
 
 export const VIEWS = ['floor', 'pulse', 'constellation', 'index'] as const;
 export type View = (typeof VIEWS)[number];
@@ -14,6 +15,7 @@ export interface State {
   platform: string[];
   type: string[];
   loc: string[];
+  org: string[];
   d: [string, string] | null;
   pga: boolean;
   q: string;
@@ -29,6 +31,7 @@ export const emptyState = (): State => ({
   platform: [],
   type: [],
   loc: [],
+  org: [],
   d: null,
   pga: false,
   q: '',
@@ -37,7 +40,7 @@ export const emptyState = (): State => ({
   seat: 'day',
 });
 
-export type FacetKey = 'conv' | 'theme' | 'platform' | 'type' | 'loc' | 'd' | 'pga' | 'q';
+export type FacetKey = 'conv' | 'theme' | 'platform' | 'type' | 'loc' | 'org' | 'd' | 'pga' | 'q';
 
 export function matches(e: Item, s: State, except?: FacetKey): boolean {
   if (except !== 'conv' && s.conv.length && !s.conv.includes(e.conv)) return false;
@@ -45,6 +48,7 @@ export function matches(e: Item, s: State, except?: FacetKey): boolean {
   if (except !== 'platform' && s.platform.length && !s.platform.includes(e.platform)) return false;
   if (except !== 'type' && s.type.length && !s.type.includes(e.type)) return false;
   if (except !== 'loc' && s.loc.length && !s.loc.includes(e.loc)) return false;
+  if (except !== 'org' && s.org.length && !s.org.some((k) => entityByKey.get(k)?.test(e))) return false;
   if (except !== 'd' && s.d && (!e.date || e.date < s.d[0] || e.date > s.d[1])) return false;
   if (except !== 'pga' && s.pga && !e.pga) return false;
   if (except !== 'q' && s.q && !fold(`${e.title} ${e.organisers} ${e.detail}`).includes(fold(s.q))) return false;
@@ -59,7 +63,7 @@ export function seatMatches(st: Statement, s: State): boolean {
 }
 
 export const isFiltered = (s: State) =>
-  !!(s.conv.length || s.theme.length || s.platform.length || s.type.length || s.loc.length || s.d || s.pga || s.q);
+  !!(s.conv.length || s.theme.length || s.platform.length || s.type.length || s.loc.length || s.org.length || s.d || s.pga || s.q);
 
 const joinOr = (xs: string[]) => (xs.length < 2 ? xs.join('') : `${xs.slice(0, -1).join(', ')} or ${xs[xs.length - 1]}`);
 
@@ -82,6 +86,7 @@ export function sentence(events: Item[], meta: Meta, s: State): string {
         }),
       ),
     );
+  if (s.org.length) parts.push(`naming ${joinOr(s.org.map((k) => entityByKey.get(k)!.label))} among the organisers`);
   if (s.d) parts.push(s.d[0] === s.d[1] ? `on ${shortDate(s.d[0])}` : `from ${day(s.d[0])} to ${shortDate(s.d[1])}`);
   if (s.pga) parts.push('with the President of the General Assembly taking part');
   if (s.q) parts.push(`matching “${s.q}”`);
@@ -89,7 +94,7 @@ export function sentence(events: Item[], meta: Meta, s: State): string {
 }
 
 // ---------------------------------------------------------------------------
-// URL codec. Keys: v c t p y w d pga sel q f s
+// URL codec. Keys: v c t p y w o d pga sel q f s
 
 const LIST_KEYS: [keyof State, string][] = [
   ['conv', 'c'],
@@ -97,6 +102,7 @@ const LIST_KEYS: [keyof State, string][] = [
   ['platform', 'p'],
   ['type', 'y'],
   ['loc', 'w'],
+  ['org', 'o'],
 ];
 
 function allowed(meta: Meta): Record<string, string[]> {
@@ -106,6 +112,7 @@ function allowed(meta: Meta): Record<string, string[]> {
     platform: meta.platforms.map((o) => o.key),
     type: meta.types.map((o) => o.key),
     loc: meta.locations.map((o) => o.key),
+    org: ENTITY_KEYS,
   };
 }
 

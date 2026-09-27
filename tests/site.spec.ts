@@ -161,6 +161,7 @@ test('URL state: 50 random filter states round trip', async ({ page, browserName
     s.seat = rnd() < 0.3 ? 'group' : 'day';
     if (rnd() < 0.3) s.sel = [...ids][Math.floor(rnd() * ids.size)];
     if (rnd() < 0.2) s.q = ['kenya', 'UNESCO', 'Côte', 'ITU'][Math.floor(rnd() * 4)];
+    if (rnd() < 0.2) s.org = [['itu'], ['unesco', 'undp'], ['pga'], ['eu']][Math.floor(rnd() * 4)];
     const q = toQuery(s, meta);
     expect(toQuery(fromQuery(q, meta, ids), meta)).toBe(q);
     expect(fromQuery(q, meta, ids)).toEqual(canonical(s, meta));
@@ -377,4 +378,31 @@ test('filters open as a drawer on wide screens and a sheet on phones', async ({ 
   await expect(page.locator('.sentence')).toContainText('health');
   await page.keyboard.press('Escape');
   await expect(panel).toBeHidden();
+});
+
+test('who took part: directory renders, links work, passes axe and copy lint', async ({ page }) => {
+  await page.goto('./who/');
+  await expect(page.locator('h1')).toHaveText('Who took part');
+  for (const g of S.groups) await expect(page.locator('.group-head', { hasText: g.label })).toContainText(`${g.lit} OF ${g.total} MENTIONED AI`);
+  await expect(page.locator('#countries .tile')).toHaveCount(94);
+  await axe(page, 'who');
+  await lintPage(page, 'who');
+  const over = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+  expect(over).toBeLessThanOrEqual(0);
+  // Only seats of statements that mentioned AI can be pointed at.
+  const kenya = page.locator('.tile', { hasText: 'Kenya' });
+  await expect(kenya).not.toHaveAttribute('data-order', /.*/);
+  await page.locator('#un_system .tile', { hasText: /^ITU/ }).click();
+  await expect(page).toHaveURL(/\?o=itu/);
+  await page.waitForSelector('.stage svg');
+  await expect(page.locator('.sentence')).toHaveText('Showing 16 of 133 items: naming ITU among the organisers.');
+  await page.getByRole('button', { name: 'CLEAR \u201cITU\u201d' }).click();
+  await expect(page.locator('.sentence')).toHaveText(`Showing ${S.items} of ${S.items} items.`);
+});
+
+test('who took part: every link resolves', async ({ page, request }, info) => {
+  test.skip(info.project.name !== 'desktop', 'one project is enough');
+  await page.goto('./who/');
+  const hrefs = await page.locator('main a[href]').evaluateAll((as) => as.map((a) => (a as HTMLAnchorElement).href));
+  for (const h of [...new Set(hrefs)].filter((h) => !h.includes('#'))) expect((await request.get(h)).status(), h).toBe(200);
 });

@@ -20,6 +20,7 @@
   import Search from './Search.svelte';
   import HowTo from './HowTo.svelte';
   import type { Preset } from '../../lib/presets';
+  import { entityByKey } from '../../lib/entities';
   import { indexController } from '../../lib/indexctl';
 
   const base = import.meta.env.BASE_URL.replace(/\/$/, '');
@@ -690,6 +691,7 @@
             /></svg
           >
         </button>
+        <a class="mbtn who-wide" href={`${base}/who/`}>{copy.who.link}</a>
         <button class="mbtn" type="button" aria-expanded={filtersOpen} aria-controls="filters" onclick={() => (filtersOpen = !filtersOpen)}
           >{copy.filter}{#if filtered}<span class="dot" aria-hidden="true"></span><span class="sr-only">, filters on</span>{/if}</button
         >
@@ -715,6 +717,9 @@
         {#if S.q}
           <button class="mbtn sm" type="button" onclick={() => (S.q = '')}>{copy.clear} &ldquo;{S.q}&rdquo;</button>
         {/if}
+        {#each S.org as k}
+          <button class="mbtn sm" type="button" onclick={() => (S.org = S.org.filter((x) => x !== k))}>{copy.clear} &ldquo;{entityByKey.get(k)?.label}&rdquo;</button>
+        {/each}
         <p class="micro method">{M ? copy.methodLine(M.meta) : initial.method}</p>
         {#if !hintHidden}<p class="hint">{coarse ? copy.hintTouch : copy.hint}</p>{/if}
       </div>
@@ -728,6 +733,7 @@
     <div class="starts" role="group" aria-labelledby="starts-title">
       <p class="micro" id="starts-title">{copy.startWith}</p>
       <div class="starts-row">
+      <a class="mbtn sm who-phone" href={`${base}/who/`}>{copy.starts.who}</a>
       <button class="mbtn sm" type="button" aria-haspopup="dialog" onclick={() => (searchOpen = true)}>{copy.starts.country}</button>
       {#each initial.presets as p}
         <a
@@ -1055,6 +1061,17 @@
       flex: none;
     }
     .tools .save .sizes {
+      display: none;
+    }
+  }
+  /* Who took part sits in the toolbar on wide screens and in the Start with row below 1000 px */
+  @media (max-width: 999px) {
+    .tools .who-wide {
+      display: none;
+    }
+  }
+  @media (min-width: 1000px) {
+    .starts-row .who-phone {
       display: none;
     }
   }

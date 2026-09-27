@@ -1,0 +1,389 @@
+---
+import Base from '../layouts/Base.astro';
+import { events, debate, meta, S, base, abs, countryPages } from '../lib/load';
+import { copy } from '../lib/copy';
+import { dateOrder, microDate } from '../lib/data';
+import { colorOf, shapeOf, swatchSvg } from '../lib/marks';
+import { ENTITY_GROUPS } from '../lib/entities';
+import type { Item } from '../lib/types';
+
+const w = copy.who;
+const order = dateOrder(events, meta);
+const byDate = (list: Item[]) => order.filter((e) => list.includes(e));
+const marks = (list: Item[]) => byDate(list).map((e) => swatchSvg(shapeOf(e), colorOf(meta, e.conv), 11)).join('');
+const byName = (a: string, b: string) => a.localeCompare(b, 'en');
+
+const pages = countryPages();
+const groups = [...meta.debate_groups]
+  .sort((a, b) => byName(a.label, b.label))
+  .map((g) => {
+    const seats = debate.filter((s) => s.member_state && s.group === g.key);
+    return {
+      ...g,
+      seats,
+      lit: seats.filter((s) => s.raised_ai).length,
+      countries: pages.filter((c) => c.statement.group === g.key).sort((a, b) => byName(a.statement.country, b.statement.country)),
+    };
+  });
+const observers = pages.filter((c) => c.statement.group === 'observer');
+
+// The group's seats as a small half circle, speaking order left to right.
+function arc(seats: typeof debate) {
+  const n = seats.length;
+  const cx = 90;
+  const cy = 84;
+  const r = 70;
+  return seats
+    .map((s, i) => {
+      const a = Math.PI - ((i + 0.5) * Math.PI) / n;
+      const x = cx + r * Math.cos(a);
+      const y = cy - r * Math.sin(a);
+      const rot = 90 - (a * 180) / Math.PI;
+      return `<rect data-order="${s.order}" x="-2.6" y="-6.5" width="5.2" height="13" rx="2.6" transform="translate(${x.toFixed(1)} ${y.toFixed(1)}) rotate(${rot.toFixed(1)})" fill="${s.raised_ai ? '#EFEBE1' : '#34464A'}"/>`;
+    })
+    .join('');
+}
+
+const bodyGroups = ENTITY_GROUPS.map((g) => ({
+  ...g,
+  entities: g.entities.map((en) => ({ ...en, items: events.filter(en.test) })).filter((en) => en.items.length),
+}));
+const platforms = meta.platforms.map((p) => ({ ...p, items: events.filter((e) => e.platform === p.key) })).filter((p) => p.items.length);
+const conveners = meta.conveners.map((c) => ({ ...c, items: events.filter((e) => e.conv === c.key) }));
+
+const nav = [
+  ['countries', w.countriesNav],
+  ...bodyGroups.map((g) => [g.key, g.label.toUpperCase()]),
+  ['platforms', w.platformsHead.toUpperCase()],
+  ['conveners', w.convenersHead.toUpperCase()],
+];
+---
+
+<Base
+  preloadUi
+  title={`${w.title}. ${copy.title(meta)}`}
+  description={`${w.intro} ${copy.description(S)}`}
+  url={abs('/who/')}
+  image={abs('/og/cover.png')}
+  imageAlt={`${meta.headline}. ${copy.deck1(S)} ${copy.deck2(S)}`}
+>
+  <a class="skip" href="#main">Skip to the content</a>
+  <header class="wrap share-head">
+    <div class="tagrow">
+      <span class="tag">{copy.tag}</span>
+      <span class="kicker micro">{copy.kicker(meta)}</span>
+    </div>
+    <p class="share-title"><a href={`${base}/`}>{meta.headline}</a></p>
+  </header>
+
+  <main id="main" class="wrap who">
+    <h1>{w.title}</h1>
+    <p class="intro">{w.intro}</p>
+    <nav aria-label={w.jump}>
+      <p class="micro">{w.jump}</p>
+      <ul class="jump">
+        {nav.map(([id, label]) => <li><a class="mbtn sm" href={`#${id}`}>{label}</a></li>)}
+      </ul>
+    </nav>
+
+    <section id="countries" aria-labelledby="countries-h">
+      <h2 id="countries-h">{w.countriesHead}</h2>
+      <p class="note">{w.countriesNote}</p>
+      {
+        groups.map((g) => (
+          <article class="group" aria-labelledby={`g-${g.key}`}>
+            <div class="group-head">
+              <svg class="arc" viewBox="0 0 180 92" aria-hidden="true" focusable="false" set:html={arc(g.seats)} />
+              <div>
+                <h3 id={`g-${g.key}`}>{g.label}</h3>
+                <p class="micro">{w.groupLine(g.lit, g.seats.length)}</p>
+              </div>
+            </div>
+            <ul class="tiles">
+              {g.countries.map((c) => (
+                <li>
+                  <a class="tile" href={`${base}/country/${c.slug}/`} data-order={c.statement.raised_ai ? c.statement.order : undefined}>
+                    <span class="name">{c.statement.country}</span>
+                    {c.statement.raised_ai && (
+                      <span class="micro line">
+                        <svg width="8" height="14" viewBox="0 0 8 14" aria-hidden="true">
+                          <rect x="0.75" y="0.5" width="6.5" height="13" rx="3.25" fill="#EFEBE1" />
+                        </svg>
+                        {w.mentioned(microDate(c.statement.date))}
+                      </span>
+                    )}
+                    {c.items.length > 0 && (
+                      <span class="micro line">
+                        <span class="marks" set:html={marks(c.items)} />
+                        {w.convened(c.items.length)}
+                      </span>
+                    )}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </article>
+        ))
+      }
+      {
+        observers.length > 0 && (
+          <article class="group" aria-labelledby="g-observers">
+            <div class="group-head">
+              <h3 id="g-observers">{w.observers}</h3>
+            </div>
+            <ul class="tiles">
+              {observers.map((c) => (
+                <li>
+                  <a class="tile" href={`${base}/country/${c.slug}/`}>
+                    <span class="name">{c.statement.country}</span>
+                    {c.statement.raised_ai && <span class="micro line">{w.mentioned(microDate(c.statement.date))}</span>}
+                    {c.items.length > 0 && (
+                      <span class="micro line">
+                        <span class="marks" set:html={marks(c.items)} />
+                        {w.convened(c.items.length)}
+                      </span>
+                    )}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </article>
+        )
+      }
+    </section>
+
+    {
+      bodyGroups.map((g) => (
+        <section id={g.key} aria-labelledby={`${g.key}-h`}>
+          <h2 id={`${g.key}-h`}>{g.label}</h2>
+          <p class="note">{w.bodiesNote}</p>
+          <ul class="tiles">
+            {g.entities.map((en) => (
+              <li>
+                <a class="tile" href={`${base}/?o=${en.key}`}>
+                  <span class="name">{en.label}</span>
+                  <span class="micro line">
+                    <span class="marks" set:html={marks(en.items)} />
+                    {w.items(en.items.length)}
+                  </span>
+                </a>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ))
+    }
+
+    <section id="platforms" aria-labelledby="platforms-h">
+      <h2 id="platforms-h">{w.platformsHead}</h2>
+      <p class="note">{w.platformsNote}</p>
+      <ul class="tiles">
+        {
+          platforms.map((p) => (
+            <li>
+              <a class="tile" href={`${base}/?p=${p.key}`}>
+                <span class="name">{p.label}</span>
+                <span class="micro line">
+                  <span class="marks" set:html={marks(p.items)} />
+                  {w.items(p.items.length)}
+                </span>
+              </a>
+            </li>
+          ))
+        }
+      </ul>
+    </section>
+
+    <section id="conveners" aria-labelledby="conveners-h">
+      <h2 id="conveners-h">{w.convenersHead}</h2>
+      <p class="note">{w.convenersNote}</p>
+      <ul class="tiles">
+        {
+          conveners.map((c) => (
+            <li>
+              <a class="tile" href={`${base}/?c=${c.key}`}>
+                <span class="name">
+                  <Fragment set:html={swatchSvg(c.mark === 'hollow' ? 'ring' : 'circle', c.color ?? '#7E8B8E', 14)} /> {c.label}
+                </span>
+                {c.long && <span class="long">{c.long}</span>}
+                <span class="micro line">{w.items(c.items.length)}</span>
+              </a>
+            </li>
+          ))
+        }
+      </ul>
+    </section>
+  </main>
+
+  <footer class="site-foot wrap">
+    <p>{meta.disclaimer}</p>
+    <a class="mbtn" href={`${base}/#about`}>{copy.about}</a>
+  </footer>
+</Base>
+
+<script>
+  // Hovering or focusing a country that mentioned AI marks its lit seat in the group's half circle.
+  for (const tile of document.querySelectorAll<HTMLElement>('.tile[data-order]')) {
+    const seat = tile.closest('.group')?.querySelector<SVGRectElement>(`.arc rect[data-order="${tile.dataset.order}"]`);
+    if (!seat) continue;
+    const on = () => seat.classList.add('hi');
+    const off = () => seat.classList.remove('hi');
+    tile.addEventListener('mouseenter', on);
+    tile.addEventListener('mouseleave', off);
+    tile.addEventListener('focus', on);
+    tile.addEventListener('blur', off);
+  }
+</script>
+
+<style is:global>
+  .share-head {
+    padding-top: 24px;
+  }
+  .share-title {
+    font-family: var(--headline);
+    font-weight: 800;
+    font-stretch: 75%;
+    font-size: clamp(36px, 7vw, 64px);
+    line-height: 0.9;
+    margin: 18px 0 12px;
+  }
+  .share-title a {
+    text-decoration: none;
+  }
+  .who {
+    border-top: 1px solid var(--hair);
+    padding-bottom: 48px;
+  }
+  .who h1 {
+    font-family: var(--headline);
+    font-weight: 800;
+    font-stretch: 75%;
+    font-size: clamp(44px, 8vw, 88px);
+    line-height: 0.9;
+    margin: 24px 0 12px;
+  }
+  .who .intro {
+    font-size: clamp(18px, 2.2vw, 24px);
+    font-variation-settings: 'opsz' 36;
+    max-width: 40em;
+    margin: 0 0 20px;
+  }
+  .who nav p {
+    margin: 0 0 6px;
+  }
+  .jump {
+    list-style: none;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 0;
+    margin: 0 0 12px;
+  }
+  .who section {
+    border-top: 1px solid var(--hair);
+    margin-top: 36px;
+    padding-top: 8px;
+    scroll-margin-top: 16px;
+  }
+  .who h2 {
+    font-family: var(--display);
+    font-weight: 800;
+    font-stretch: 75%;
+    font-size: clamp(30px, 4.5vw, 44px);
+    line-height: 1;
+    margin: 16px 0 8px;
+  }
+  .who .note {
+    color: var(--mute);
+    font-size: 16px;
+    max-width: 48em;
+    margin: 0 0 16px;
+  }
+  .group {
+    margin: 26px 0 8px;
+  }
+  .group-head {
+    display: flex;
+    align-items: flex-end;
+    gap: 16px;
+    border-bottom: 1px solid var(--hair);
+    padding-bottom: 10px;
+    margin-bottom: 4px;
+  }
+  .group-head h3 {
+    font-family: var(--display);
+    font-weight: 600;
+    font-stretch: 87%;
+    font-size: 22px;
+    line-height: 1.15;
+    margin: 0 0 4px;
+  }
+  .group-head p {
+    margin: 0;
+  }
+  .arc {
+    width: 120px;
+    height: auto;
+    flex: none;
+  }
+  .arc rect {
+    transition: fill 0.15s;
+  }
+  .arc rect.hi {
+    fill: #f8c534;
+  }
+  .tiles {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+    column-gap: 20px;
+  }
+  .tile {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-height: 44px;
+    padding: 10px 0 12px;
+    border-bottom: 1px solid var(--hair);
+    text-decoration: none;
+    height: 100%;
+  }
+  .tile .name {
+    font-family: var(--display);
+    font-weight: 600;
+    font-stretch: 87%;
+    font-size: 18px;
+    line-height: 1.2;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .tile:hover .name {
+    text-decoration: underline;
+    text-decoration-color: var(--micro);
+    text-underline-offset: 3px;
+  }
+  .tile .long {
+    color: var(--mute);
+    font-size: 15px;
+  }
+  .tile .line {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 6px;
+    font-size: 11px;
+  }
+  .tile .marks {
+    display: inline-flex;
+    flex-wrap: wrap;
+    gap: 2px;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .arc rect {
+      transition: none;
+    }
+  }
+</style>
