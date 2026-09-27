@@ -191,6 +191,18 @@ button {
   padding-top: 28px;
   padding-bottom: 8px;
 }
+.nerd-lab {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0 0 20px;
+  color: var(--mute);
+}
+.nerd-lab svg {
+  height: 20px;
+  width: auto;
+  color: var(--ink);
+}
 .tagrow {
   display: flex;
   flex-wrap: wrap;

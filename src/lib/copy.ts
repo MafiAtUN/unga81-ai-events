@@ -38,6 +38,7 @@ export const copy = {
   methodLine: (meta: Meta) =>
     `Each mark is one UN linked event, session, launch or official meeting on AI. Status as at ${longDate(meta.as_at)}.`,
   footer: (meta: Meta) => meta.disclaimer,
+  credit: 'A Nerd Lab project',
   about: 'ABOUT AND METHOD',
   download: 'Download the dataset (Excel)',
   downloadCsv: 'DOWNLOAD CSV',
