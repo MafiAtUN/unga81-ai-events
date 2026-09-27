@@ -31,14 +31,3 @@ import { copy } from '../lib/copy';
   <h1 class="headline">{meta.headline}</h1>
   <p class="deck">{copy.deck1(S)} <span class="mute">{copy.deck2(S)}</span></p>
 </header>
-<div class="bar" id="bar" aria-hidden="true">
-  <div class="wrap">
-    <a class="bar-title" href={`${base}/`} tabindex="-1">{meta.headline}</a>
-    <span class="micro">{copy.kicker(meta).split('  ')[1]}</span>
-  </div>
-</div>
-<script>
-  const bar = document.getElementById('bar')!;
-  const top = document.getElementById('top')!;
-  new IntersectionObserver(([e]) => bar.classList.toggle('on', !e.isIntersecting), { rootMargin: '-40px 0px 0px 0px' }).observe(top);
-</script>

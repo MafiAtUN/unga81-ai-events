@@ -10,7 +10,8 @@
     "build": "node scripts/validate.mjs && node scripts/contrast.mjs && astro build && node scripts/copy-lint.mjs && node scripts/budgets.mjs",
     "preview": "astro preview",
     "test": "playwright test",
-    "contrast": "node scripts/contrast.mjs --verbose"
+    "contrast": "node scripts/contrast.mjs --verbose",
+    "screens": "node scripts/screens.mjs screens"
   },
   "dependencies": {
     "@astrojs/svelte": "^9.0.1",

@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onMount, untrack } from 'svelte';
+  import { onMount, untrack, tick } from 'svelte';
   import { timer, type Timer } from 'd3-timer';
   import { easeCubicInOut, easeCubicOut } from 'd3-ease';
   import { interpolateRgb } from 'd3-interpolate';
@@ -18,13 +18,15 @@
   import Card from './Card.svelte';
   import CountryCard from './CountryCard.svelte';
   import Search from './Search.svelte';
+  import HowTo from './HowTo.svelte';
+  import type { Preset } from '../../lib/presets';
   import { indexController } from '../../lib/indexctl';
 
   const base = import.meta.env.BASE_URL.replace(/\/$/, '');
   const HIT = 22; // 44 px targets
 
   // Server rendered text for the status line, so nothing shifts when the island hydrates.
-  let { initial }: { initial: { words: string; method: string } } = $props();
+  let { initial }: { initial: { words: string; method: string; headline: string; presets: Preset[] } } = $props();
 
   let M = $state.raw<Model | null>(null);
   let S = $state<State>(emptyState());
@@ -63,6 +65,13 @@
   let exportSize = $state<'portrait' | 'landscape'>('portrait');
   let saving = $state(false);
   let svgEl = $state<SVGSVGElement | null>(null);
+  let toolbarEl = $state<HTMLDivElement | null>(null);
+  let controlsEl = $state<HTMLDivElement | null>(null);
+  let vh = $state(900);
+  let chartOffset = $state(0);
+  let pinned = $state(false);
+  let guideOpen = $state(false);
+  let hintHidden = $state(false);
   let stageEl = $state<HTMLDivElement | null>(null);
   let cardReturn: HTMLElement | null = null;
   let idx: ReturnType<typeof indexController> | null = null;
@@ -91,20 +100,24 @@
     let h = 0;
     let decor = '';
     let s = 1;
+    let ox = 0;
     let fl = null as ReturnType<typeof floorLayout> | null;
     if (view === 'floor') {
       fl = floorLayout(M.events, M.debate, M.meta, S.seat);
-      s = W / FLOOR.crop.w;
+      // Fit the whole Floor in the window below the controls, never wider than the page.
+      const fitH = (vh - chartOffset - 16) / FLOOR.crop.h;
+      s = Math.min(W / FLOOR.crop.w, Math.max(0.5, fitH));
+      ox = (W - FLOOR.crop.w * s) / 2;
       M.nodes.forEach((nd, i) => {
         const p = fl!.items.get(nd.id)!;
-        t.x[i] = (p.x - FLOOR.crop.x) * s;
+        t.x[i] = ox + (p.x - FLOOR.crop.x) * s;
         t.y[i] = (p.y - FLOOR.crop.y) * s;
         t.k[i] = s;
         t.o[i] = nd.copy === 0 ? 1 : 0;
       });
       M.members.forEach((m, j) => {
         const p = fl!.seats.get(m.order)!;
-        st.x[j] = (p.x - FLOOR.crop.x) * s;
+        st.x[j] = ox + (p.x - FLOOR.crop.x) * s;
         st.y[j] = (p.y - FLOOR.crop.y) * s;
         st.r[j] = p.rot;
         st.k[j] = s;
@@ -112,27 +125,32 @@
         st.lit[j] = m.raised_ai ? 1 : 0;
       });
       h = FLOOR.crop.h * s;
-      decor = `<g transform="scale(${s.toFixed(4)}) translate(${-FLOOR.crop.x} ${-FLOOR.crop.y})">${floorDecor(fl, M.st, M.meta)}${S.seat === 'group' ? groupRowNumbers(fl) : ''}</g>`;
+      decor = `<g transform="translate(${ox.toFixed(2)} 0) scale(${s.toFixed(4)}) translate(${-FLOOR.crop.x} ${-FLOOR.crop.y})">${floorDecor(fl, M.st, M.meta)}${S.seat === 'group' ? groupRowNumbers(fl) : ''}</g>`;
     } else if (view === 'pulse') {
       const pl = pulseLayout(M.events, M.debate, M.meta, W);
+      // Desktop calendar: shrink a little, never below 70 percent, when it would not fit the window.
+      const fit = pl.mode === 'cols' ? Math.min(1, Math.max(0.7, (vh - chartOffset - 16) / pl.h)) : 1;
+      ox = (W - W * fit) / 2;
+      const seatK = pl.mode === 'cols' ? 0.72 : 1;
       M.nodes.forEach((nd, i) => {
         const p = pl.items.get(nd.id)!;
-        t.x[i] = p.x;
-        t.y[i] = p.y;
-        t.k[i] = 1;
+        t.x[i] = ox + p.x * fit;
+        t.y[i] = p.y * fit;
+        t.k[i] = fit;
         t.o[i] = nd.copy === 0 ? 1 : 0;
       });
       M.members.forEach((m, j) => {
         const p = pl.seats.get(m.order)!;
-        st.x[j] = p.x;
-        st.y[j] = p.y;
+        st.x[j] = ox + p.x * fit;
+        st.y[j] = p.y * fit;
         st.r[j] = 0;
-        st.k[j] = 1;
+        st.k[j] = seatK * fit;
         st.o[j] = 1;
         st.lit[j] = m.raised_ai ? 1 : 0;
       });
-      h = pl.h;
-      decor = pulseDecor(pl);
+      h = pl.h * fit;
+      s = fit;
+      decor = fit === 1 ? pulseDecor(pl) : `<g transform="translate(${ox.toFixed(2)} 0) scale(${fit.toFixed(4)})">${pulseDecor(pl)}</g>`;
     } else {
       const bp = bpFor(W);
       const L = M.constellation[bp][S.facet];
@@ -169,7 +187,7 @@
       h = L.h * sc;
       s = sc;
     }
-    return { kind: `${view}|${S.facet}|${S.seat}`, view, t, st, h, decor, s, fl };
+    return { kind: `${view}|${S.facet}|${S.seat}`, view, t, st, h, decor, s, ox, fl };
   });
 
   // Constellation labels carry live counts, so they are derived separately.
@@ -402,6 +420,29 @@
     S.v = v;
     hover = null;
     pinnedSeat = null;
+    toControls();
+  }
+  // Bring the controls to the top of the window, so the chart fills the screen below them.
+  async function toControls() {
+    await tick();
+    if (!toolbarEl) return;
+    const top = toolbarEl.getBoundingClientRect().top;
+    if (Math.abs(top) < 4) return;
+    window.scrollTo({ top: scrollY + top, behavior: reduced ? 'auto' : 'smooth' });
+  }
+  function applyPreset(p: Preset) {
+    Object.assign(S, emptyState(), { v: S.v, facet: S.facet, seat: S.seat }, p.state);
+    pinnedSeat = null;
+    toControls();
+  }
+  const presetOn = (p: Preset) => !!M && toQuery({ ...S, v: null, sel: null, facet: 'convener', seat: 'day' }, M.meta) === p.query;
+  function toggleHint() {
+    hintHidden = !hintHidden;
+    try {
+      localStorage.setItem('unga81.hideTips', hintHidden ? '1' : '');
+    } catch {
+      /* storage can be unavailable, the choice then lasts for this visit */
+    }
   }
   function tabKey(ev: KeyboardEvent) {
     const i = VIEWS.indexOf(view);
@@ -535,12 +576,24 @@
     coarse = cq.matches;
     mq.addEventListener('change', () => (wide = mq.matches));
     cq.addEventListener('change', () => (coarse = cq.matches));
-    const ro = new ResizeObserver(() =>
+    const measure = () =>
       requestAnimationFrame(() => {
         if (stageEl) W = Math.floor(stageEl.clientWidth);
-      }),
-    );
+        vh = innerHeight;
+        if (controlsEl) chartOffset = Math.round(controlsEl.offsetHeight) + 8;
+      });
+    const ro = new ResizeObserver(measure);
     if (stageEl) ro.observe(stageEl);
+    if (controlsEl) ro.observe(controlsEl);
+    addEventListener('resize', measure);
+    measure();
+    try {
+      hintHidden = localStorage.getItem('unga81.hideTips') === '1';
+    } catch {
+      /* no storage, keep the tips */
+    }
+    const io = new IntersectionObserver(([e]) => (pinned = !e.isIntersecting && e.boundingClientRect.top < 0));
+    if (toolbarEl) io.observe(toolbarEl);
 
     fetch(`${base}/data/stage.json`)
       .then((r) => r.json())
@@ -576,6 +629,8 @@
     addEventListener('keydown', onKey);
     return () => {
       ro.disconnect();
+      io.disconnect();
+      removeEventListener('resize', measure);
       removeEventListener('keydown', onKey);
       stop();
     };
@@ -583,8 +638,34 @@
 </script>
 
 <div class="stage-root">
-  <div class="wrap">
-    <div class="toolbar">
+  <!-- Pinned bar: appears once the toolbar scrolls out of view -->
+  <div class="pin" class:on={pinned} inert={!pinned} aria-hidden={!pinned}>
+    <div class="wrap pin-in">
+      <a class="pin-title" href="#top">{M ? M.meta.headline : initial.headline}</a>
+      {#if wide}
+        <div class="pin-tabs" role="group" aria-label="Views">
+          {#each VIEWS as v}
+            <button class="mbtn sm" type="button" aria-pressed={view === v} onclick={() => setView(v)}>{copy.tabs[v]}</button>
+          {/each}
+        </div>
+      {/if}
+      <button class="mbtn icon" type="button" onclick={() => (searchOpen = true)} aria-label="Search" aria-haspopup="dialog">
+        <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true" focusable="false"
+            ><circle cx="7.5" cy="7.5" r="5.5" fill="none" stroke="currentColor" stroke-width="1.6" /><path
+              d="M11.6 11.6L16 16"
+              stroke="currentColor"
+              stroke-width="1.6"
+            /></svg
+          >
+      </button>
+      <button class="mbtn" type="button" aria-expanded={filtersOpen} aria-controls="filters" onclick={() => (filtersOpen = !filtersOpen)}
+        >{copy.filter}{#if filtered}<span class="dot" aria-hidden="true"></span>{/if}</button
+      >
+    </div>
+  </div>
+
+  <div class="wrap controls" bind:this={controlsEl}>
+    <div class="toolbar" bind:this={toolbarEl}>
       <div class="tabs" role="tablist" aria-label="Views">
         {#each VIEWS as v}
           <button
@@ -628,14 +709,40 @@
       <Filters {M} bind:S open={filtersOpen} {wide} onclose={() => (filtersOpen = false)} />
     {/if}
 
-    <div class="status">
-      <p class="sentence" class:empty={M && matched.size === 0}>{M ? words : initial.words}</p>
-      {#if S.q}
-        <button class="mbtn sm" type="button" onclick={() => (S.q = '')}>{copy.clear} &ldquo;{S.q}&rdquo;</button>
-      {/if}
-      <p class="micro method">{M ? copy.methodLine(M.meta) : initial.method}</p>
+    <div class="info">
+      <div class="status">
+        <p class="sentence" class:empty={M && matched.size === 0}>{M ? words : initial.words}</p>
+        {#if S.q}
+          <button class="mbtn sm" type="button" onclick={() => (S.q = '')}>{copy.clear} &ldquo;{S.q}&rdquo;</button>
+        {/if}
+        <p class="micro method">{M ? copy.methodLine(M.meta) : initial.method}</p>
+        {#if !hintHidden}<p class="hint">{coarse ? copy.hintTouch : copy.hint}</p>{/if}
+      </div>
+      <div class="guide-actions">
+        <button class="mbtn sm" type="button" aria-haspopup="dialog" onclick={() => (guideOpen = true)} disabled={!M}>{copy.howTo}</button>
+        <button class="mbtn sm" type="button" aria-pressed={hintHidden} onclick={toggleHint}>{hintHidden ? copy.showTips : copy.hideTips}</button>
+      </div>
     </div>
     <p class="sr-only" aria-live="polite">{live}</p>
+
+    <div class="starts" role="group" aria-labelledby="starts-title">
+      <p class="micro" id="starts-title">{copy.startWith}</p>
+      <div class="starts-row">
+      <button class="mbtn sm" type="button" aria-haspopup="dialog" onclick={() => (searchOpen = true)}>{copy.starts.country}</button>
+      {#each initial.presets as p}
+        <a
+          class="mbtn sm"
+          href={p.query || './'}
+          aria-current={presetOn(p) ? 'true' : undefined}
+          onclick={(e) => {
+            if (!M) return;
+            e.preventDefault();
+            applyPreset(p);
+          }}>{p.label}</a
+        >
+      {/each}
+      </div>
+    </div>
 
     {#if view === 'constellation'}
       <div class="facets" role="group" aria-label="Group items by">
@@ -678,7 +785,7 @@
           <g class="decor" class:on={decorOn} aria-hidden="true">
             {@html view === 'constellation' ? constDecor : lay.decor}
             {#if view === 'floor'}
-              <g transform={`scale(${lay.s.toFixed(4)}) translate(${-FLOOR.crop.x} ${-FLOOR.crop.y})`}>
+              <g transform={`translate(${lay.ox.toFixed(2)} 0) scale(${lay.s.toFixed(4)}) translate(${-FLOOR.crop.x} ${-FLOOR.crop.y})`}>
                 {@html bigNumber(bigN)}
               </g>
             {/if}
@@ -836,6 +943,9 @@
   {#if M && countryObj}
     <CountryCard {M} c={countryObj} {wide} onclose={() => (country = null)} onitem={(id: string) => { country = null; select(id); }} />
   {/if}
+  {#if M && guideOpen}
+    <HowTo {M} onclose={() => (guideOpen = false)} />
+  {/if}
   {#if M && searchOpen}
     <Search {M} onclose={() => (searchOpen = false)} onchoose={chooseSearch} />
   {/if}
@@ -844,6 +954,119 @@
 <style>
   :global(html:not([data-view='index'])) .stage-root {
     min-height: 100vh;
+  }
+  .pin {
+    position: fixed;
+    inset: 0 0 auto 0;
+    z-index: 30;
+    background: var(--bg);
+    border-bottom: 1px solid var(--hair);
+    transform: translateY(-100%);
+    visibility: hidden;
+    transition:
+      transform 0.2s,
+      visibility 0.2s;
+  }
+  .pin.on {
+    transform: none;
+    visibility: visible;
+  }
+  .pin-in {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 56px;
+  }
+  .pin-title {
+    font-family: var(--headline);
+    font-weight: 800;
+    font-stretch: 75%;
+    font-size: 22px;
+    line-height: 1;
+    flex: 1;
+    min-width: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    text-decoration: none;
+    padding: 12px 0;
+  }
+  .pin-tabs {
+    display: flex;
+  }
+  .pin-tabs .mbtn + .mbtn {
+    border-left: 0;
+  }
+  .info {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: 8px 24px;
+    padding: 12px 0 8px;
+  }
+  .info .status {
+    flex: 1 1 520px;
+    padding: 0;
+  }
+  .hint {
+    margin: 2px 0 0;
+    flex: 1 1 100%;
+    font-size: 15px;
+    color: var(--mute);
+  }
+  .guide-actions {
+    display: flex;
+    gap: 6px;
+  }
+  .starts {
+    display: flex;
+    align-items: center;
+    gap: 6px 10px;
+    padding: 0 0 6px;
+    min-width: 0;
+  }
+  .starts p {
+    margin: 0;
+    white-space: nowrap;
+  }
+  .starts-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    min-width: 0;
+  }
+  /* Phones: presets sit in one row that swipes sideways */
+  @media (max-width: 599px) {
+    .starts {
+      flex-direction: column;
+      align-items: stretch;
+    }
+    .starts-row {
+      flex-wrap: nowrap;
+      overflow-x: auto;
+      scrollbar-width: none;
+      margin-right: calc(-1 * var(--gutter));
+      padding-right: var(--gutter);
+    }
+    .starts-row::-webkit-scrollbar {
+      display: none;
+    }
+    .starts-row > * {
+      flex: none;
+    }
+    .tools .save .sizes {
+      display: none;
+    }
+  }
+  .starts a[aria-current='true'] {
+    background: var(--ink);
+    color: var(--bg);
+    border-color: var(--ink);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .pin {
+      transition: none;
+    }
   }
   .toolbar {
     display: flex;

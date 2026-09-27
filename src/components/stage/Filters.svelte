@@ -91,7 +91,7 @@
 
   let sheet = $state<HTMLDivElement | null>(null);
   $effect(() => {
-    if (open && !wide) queueMicrotask(() => sheet?.querySelector<HTMLElement>('button')?.focus());
+    if (open) queueMicrotask(() => sheet?.querySelector<HTMLElement>('button')?.focus());
   });
   function sheetKey(ev: KeyboardEvent) {
     if (ev.key === 'Escape') onclose();
@@ -103,10 +103,11 @@
   <div
     class="filters"
     class:sheet={!wide}
+    class:drawer={wide}
     id="filters"
     bind:this={sheet}
-    role={wide ? 'region' : 'dialog'}
-    aria-modal={wide ? undefined : 'true'}
+    role="dialog"
+    aria-modal={wide ? 'false' : 'true'}
     aria-label="Filters"
     onkeydown={sheetKey}
     tabindex="-1"
@@ -205,6 +206,22 @@
   }
   .filters:focus {
     outline: none;
+  }
+  /* Wide screens: a drawer on the left, so the chart stays in view and updates live */
+  .drawer {
+    position: fixed;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 360px;
+    z-index: 70;
+    margin: 0;
+    overflow-y: auto;
+    background: var(--panel);
+    border-width: 0 1px 0 0;
+    grid-template-columns: 1fr;
+    align-content: start;
+    padding: 12px 20px 24px;
   }
   .sheet {
     position: fixed;

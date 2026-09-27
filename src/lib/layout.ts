@@ -274,7 +274,7 @@ export function pulseLayout(events: Item[], debate: Statement[], meta: Meta, W: 
   const cx = (i: number) => pad + (i + 0.5) * colW;
 
   // Milestone spine: labels in lanes so they never overlap.
-  const labelW = 150;
+  const labelW = Math.max(150, Math.min(210, colW * 3.4));
   const lanes: number[] = [];
   const laneOf: { e: Item; i: number; lane: number; ls: string[]; anchor: string; x0: number }[] = [];
   const ms = events.filter((e) => e.milestone && e.date).sort((a, b) => a.date!.localeCompare(b.date!));
@@ -282,15 +282,32 @@ export function pulseLayout(events: Item[], debate: Statement[], meta: Meta, W: 
     const i = days.indexOf(e.date!);
     const anchor = cx(i) + labelW > W - pad ? 'end' : 'start';
     const x0 = anchor === 'start' ? cx(i) - 4 : cx(i) - labelW + 4;
-    let lane = lanes.findIndex((end) => end < x0 - 10);
-    if (lane < 0) lane = lanes.push(0) - 1;
+    const tick = cx(i);
+    // A lane works if the label does not overlap its neighbours and no leader line crosses a label.
+    const fits = (L: number) =>
+      (lanes[L] ?? -Infinity) < x0 - 10 &&
+      laneOf.every((p) => {
+        const pTick = cx(p.i);
+        if (p.lane < L) return pTick < x0 - 6 || pTick > x0 + labelW + 6;
+        if (p.lane > L) return tick < p.x0 - 6 || tick > p.x0 + labelW + 6;
+        return true;
+      });
+    let lane = 0;
+    while (!fits(lane)) lane++;
+    if (lane >= lanes.length) lanes.push(0);
     lanes[lane] = x0 + labelW;
-    laneOf.push({ e, i, lane, ls: wrap(e.milestone!, 22), anchor, x0 });
+    laneOf.push({ e, i, lane, ls: wrap(e.milestone!, Math.floor(labelW / 6.6)), anchor, x0 });
   }
-  const laneH = laneOf.reduce((m, l) => Math.max(m, l.ls.length), 1) * 17 + 28;
-  const spineY = lanes.length * laneH + 12;
+  // Each lane is as tall as its longest label.
+  const laneTop: number[] = [];
+  let acc = 0;
+  lanes.forEach((_, k) => {
+    laneTop.push(acc);
+    acc += laneOf.filter((l) => l.lane === k).reduce((m, l) => Math.max(m, l.ls.length), 1) * 17 + 16;
+  });
+  const spineY = acc + 14;
   for (const l of laneOf) {
-    const y = l.lane * laneH + 14;
+    const y = laneTop[l.lane] + 14;
     milestones.push({ id: l.e.id, lines: l.ls, x: l.anchor === 'start' ? cx(l.i) - 4 : cx(l.i) + 4, y, tx: cx(l.i), ty: spineY, anchor: l.anchor });
   }
   lines.push({ x1: pad, y1: spineY, x2: W - pad, y2: spineY, cls: 'spine' });
@@ -328,7 +345,7 @@ export function pulseLayout(events: Item[], debate: Statement[], meta: Meta, W: 
     const gy = baseY + 64;
     const first = days.indexOf(gdDays[0]);
     labels.push({ text: 'GENERAL DEBATE', x: pad + first * colW + 3, y: gy - 6, cls: 'micro' });
-    const seatPitchX = Math.max(8, Math.min(10, colW / 5));
+    const seatPitchX = Math.max(6.5, Math.min(8, colW / 7));
     const seatsPer = Math.max(1, Math.floor((colW - 4) / seatPitchX));
     for (const d of gdDays) {
       const i = days.indexOf(d);
@@ -336,9 +353,9 @@ export function pulseLayout(events: Item[], debate: Statement[], meta: Meta, W: 
       daySeats.forEach((s, m) => {
         const row = Math.floor(m / seatsPer);
         const col = m % seatsPer;
-        seats.set(s.order, { x: cx(i) + (col - (seatsPer - 1) / 2) * seatPitchX, y: gy + 12 + row * 19, rot: 0 });
+        seats.set(s.order, { x: cx(i) + (col - (seatsPer - 1) / 2) * seatPitchX, y: gy + 10 + row * 14, rot: 0 });
       });
-      laneBottom = Math.max(laneBottom, gy + 12 + Math.ceil(daySeats.length / seatsPer) * 19);
+      laneBottom = Math.max(laneBottom, gy + 10 + Math.ceil(daySeats.length / seatsPer) * 14);
     }
   }
   return { items, seats, labels, milestones, lines, h: laneBottom + 8, mode: 'cols' as const };

@@ -39,6 +39,7 @@ npm run validate      # data checks from section 9
 npm run build         # validate, build, copy lint, size budgets
 npm test              # Playwright with axe, keyboard, URL round trips, no JS, network checks
 npx lhci autorun      # Lighthouse CI on the built site
+npm run screens       # with a preview running: whole chart in view on 14 screen sizes, with screenshots
 ```
 
 Every push to `main` runs the same steps in GitHub Actions and deploys `dist` to GitHub Pages.

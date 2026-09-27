@@ -217,11 +217,13 @@ test('SAVE IMAGE produces a PNG at both sizes', async ({ page }, info) => {
     });
   }
   await ready(page, './?v=floor');
-  for (const [label, w, h] of [
+  // Phones export the portrait size, the size toggle shows from 600 px up.
+  const sizes = [
     ['1080 X 1350', 1080, 1350],
     ['1200 X 627', 1200, 627],
-  ] as const) {
-    await page.getByRole('button', { name: label }).click();
+  ] as const;
+  for (const [label, w, h] of viaShare ? sizes.slice(0, 1) : sizes) {
+    if (!viaShare) await page.getByRole('button', { name: label }).click();
     if (viaShare) {
       await page.evaluate(() => ((window as unknown as { __shared: unknown }).__shared = null));
       const shared = page
@@ -285,4 +287,94 @@ test('no runtime request leaves the site origin', async ({ page }) => {
   await page.goto('./e/e058/');
   await page.goto('./country/kenya/');
   expect(outside).toEqual([]);
+});
+
+// ---------------------------------------------------------------- layout and guidance
+
+const SCREENS = [
+  ['MacBook Pro 14', 1512, 860],
+  ['MacBook Air 13', 1440, 780],
+  ['1366 laptop', 1366, 768],
+  ['1280 laptop', 1280, 720],
+  ['Full HD', 1920, 960],
+  ['iPad Pro landscape', 1194, 834],
+] as const;
+
+test('the whole chart fits the window after choosing a view, on common desktop screens', async ({ browser }, info) => {
+  test.skip(info.project.name !== 'desktop', 'desktop sizes only');
+  for (const [name, w, h] of SCREENS) {
+    const ctx = await browser.newContext({ viewport: { width: w, height: h }, reducedMotion: 'reduce' });
+    const page = await ctx.newPage();
+    await page.goto('./');
+    await page.waitForSelector('.stage svg');
+    for (const v of ['floor', 'pulse', 'constellation']) {
+      await page.locator(`#tab-${v}`).click();
+      await page.waitForTimeout(500);
+      const box = await page.locator('.stage svg').boundingBox();
+      expect(box!.y, `${name} ${v} top`).toBeGreaterThanOrEqual(0);
+      expect(box!.y + box!.height, `${name} ${v} bottom`).toBeLessThanOrEqual(h + 1);
+      const over = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+      expect(over, `${name} ${v} overflow`).toBeLessThanOrEqual(0);
+    }
+    await ctx.close();
+  }
+});
+
+test('start with presets apply a view and are links', async ({ page }) => {
+  await ready(page, './?v=floor');
+  const peak = page.getByRole('link', { name: /The peak day, 21 September/i });
+  await expect(peak).toHaveAttribute('href', '?d=0921-0921');
+  await peak.click();
+  await expect(page.locator('.sentence')).toHaveText(`Showing ${S.peak} of ${S.items} items: on 21 September.`);
+  await expect(peak).toHaveAttribute('aria-current', 'true');
+  await page.getByRole('link', { name: /PGA took part/i }).click();
+  await expect(page.locator('.sentence')).toContainText('with the President of the General Assembly taking part');
+  await page.getByRole('button', { name: /Find your country/i }).click();
+  await expect(page.getByRole('combobox')).toBeFocused();
+});
+
+test('how to read this: opens, passes axe and copy lint, closes with Escape', async ({ page }) => {
+  await ready(page, './?v=floor');
+  const btn = page.getByRole('button', { name: 'HOW TO READ THIS' });
+  await btn.click();
+  const dlg = page.getByRole('dialog', { name: 'How to read this' });
+  await expect(dlg).toBeVisible();
+  await expect(dlg).toContainText(`${S.membersAi} seats are lit`);
+  await axe(page, 'how to read');
+  await lintPage(page, 'how to read');
+  await page.keyboard.press('Escape');
+  await expect(dlg).toBeHidden();
+  await expect(btn).toBeFocused();
+  await page.getByRole('button', { name: 'HIDE TIPS' }).click();
+  await expect(page.locator('.hint')).toHaveCount(0);
+  await page.reload();
+  await page.waitForSelector('.stage svg');
+  await expect(page.locator('.hint')).toHaveCount(0);
+  await page.getByRole('button', { name: 'SHOW TIPS' }).click();
+  await expect(page.locator('.hint')).toHaveCount(1);
+});
+
+test('pinned bar appears once the toolbar scrolls away and switches views', async ({ page }, info) => {
+  test.skip(info.project.name !== 'desktop', 'the pinned tabs show on wide screens');
+  await ready(page, './?v=index');
+  await expect(page.locator('.pin')).not.toHaveClass(/on/);
+  await page.mouse.wheel(0, 3000);
+  await expect(page.locator('.pin')).toHaveClass(/on/);
+  await axe(page, 'pinned');
+  await page.locator('.pin').getByRole('button', { name: 'PULSE' }).click();
+  await expect(page).toHaveURL(/v=pulse/);
+  await expect(page.locator('.toolbar')).toBeInViewport();
+});
+
+test('filters open as a drawer on wide screens and a sheet on phones', async ({ page }, info) => {
+  await ready(page, './?v=floor');
+  await page.locator('.toolbar').getByRole('button', { name: 'FILTER' }).click();
+  const panel = page.locator('#filters');
+  await expect(panel).toBeVisible();
+  await expect(panel).toHaveClass(info.project.name === 'desktop' ? /drawer/ : /sheet/);
+  await axe(page, 'filters panel');
+  await panel.getByRole('button', { name: /^Health/ }).click();
+  await expect(page.locator('.sentence')).toContainText('health');
+  await page.keyboard.press('Escape');
+  await expect(panel).toBeHidden();
 });

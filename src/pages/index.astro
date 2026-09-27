@@ -7,6 +7,7 @@ import Footer from '../components/Footer.astro';
 import Stage from '../components/stage/Stage.svelte';
 import { meta, S, base, abs } from '../lib/load';
 import { copy } from '../lib/copy';
+import { presets } from '../lib/presets';
 ---
 
 <Base
@@ -19,7 +20,7 @@ import { copy } from '../lib/copy';
   <a class="skip" href="#views">Skip to the views</a>
   <Masthead />
   <main id="views">
-    <div class="stage-host"><Stage client:afterpaint initial={{ words: `Showing ${S.items} of ${S.items} items.`, method: copy.methodLine(meta) }} /></div>
+    <div class="stage-host"><Stage client:afterpaint initial={{ words: `Showing ${S.items} of ${S.items} items.`, method: copy.methodLine(meta), headline: meta.headline, presets: presets(meta, S) }} /></div>
     <div class="wrap">
       <noscript><p class="noscript">{copy.noJs}</p></noscript>
     </div>
