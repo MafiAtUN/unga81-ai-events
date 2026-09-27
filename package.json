@@ -1,0 +1,36 @@
+{
+  "name": "unga81-ai-events",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "extract": "node scripts/extract-data.mjs",
+    "validate": "node scripts/validate.mjs",
+    "lint:copy": "node scripts/copy-lint.mjs",
+    "dev": "astro dev",
+    "build": "node scripts/validate.mjs && astro build && node scripts/copy-lint.mjs && node scripts/budgets.mjs",
+    "preview": "astro preview",
+    "test": "playwright test"
+  },
+  "dependencies": {
+    "@astrojs/svelte": "^9.0.1",
+    "@fontsource-variable/archivo": "^5.3.0",
+    "@fontsource-variable/martian-mono": "^5.3.0",
+    "@fontsource-variable/source-serif-4": "^5.3.0",
+    "@resvg/resvg-js": "^2.6.2",
+    "astro": "^7.3.5",
+    "d3-array": "^3.2.4",
+    "d3-delaunay": "^6.0.4",
+    "d3-ease": "^3.0.1",
+    "d3-interpolate": "^3.0.1",
+    "d3-scale": "^4.0.2",
+    "d3-shape": "^3.2.0",
+    "d3-timer": "^3.0.1",
+    "satori": "^0.33.5",
+    "svelte": "^5.57.1"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "^4.13.0",
+    "@lhci/cli": "^0.15.1",
+    "@playwright/test": "^1.63.0"
+  }
+}

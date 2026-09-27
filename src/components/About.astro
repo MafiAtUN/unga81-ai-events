@@ -1,0 +1,152 @@
+---
+import { events, debate, meta, S, base } from '../lib/load';
+import { copy } from '../lib/copy';
+import { longDate } from '../lib/data';
+import { colorOf, swatchSvg, type Shape } from '../lib/marks';
+
+const host = (u: string) => new URL(u).hostname.replace(/^www\./, '');
+const tally = new Map<string, number>();
+for (const e of events) tally.set(host(e.source), (tally.get(host(e.source)) ?? 0) + 1);
+const sources = [...tally.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
+const transcriptHosts = [...new Set(debate.map((s) => host(s.transcript_source)))];
+const typeShape: Record<string, Shape> = { event: 'circle', launch: 'diamond', official: 'square' };
+const quotes = meta.quotes.filter((q) => q.verified);
+---
+
+<section class="about wrap" id="about" aria-labelledby="about-title" tabindex="-1">
+  <button class="mbtn about-close" type="button" data-close-about>{copy.close}</button>
+  <p class="micro">{copy.kicker(meta)}</p>
+  <h2 id="about-title">About and method</h2>
+
+  <h3 class="micro">{copy.aboutHeads.method}</h3>
+  <p>{meta.method}</p>
+
+  <h3 class="micro">{copy.aboutHeads.rules}</h3>
+  <ul>{copy.rules(S, meta).map((r) => <li>{r}</li>)}</ul>
+
+  <h3 class="micro">{copy.aboutHeads.categories}</h3>
+  <p class="micro">{copy.legendTitle}</p>
+  <ul>
+    {
+      meta.conveners.map((c) => (
+        <li class="cat">
+          <Fragment set:html={swatchSvg(c.mark === 'hollow' ? 'ring' : 'circle', colorOf(meta, c.key))} />
+          <span>
+            <span class="ui">{c.label}</span> <span class="micro">{S.conv[c.key]}</span>
+            {c.long && <span class="mute" style="display:block">{c.long}</span>}
+          </span>
+        </li>
+      ))
+    }
+  </ul>
+  <p class="micro" style="margin-top:16px">{copy.marksTitle}</p>
+  <ul>
+    {
+      meta.types.map((t) => (
+        <li class="cat">
+          <Fragment set:html={swatchSvg(typeShape[t.key], '#EFEBE1')} />
+          <span>{t.label}</span>
+        </li>
+      ))
+    }
+  </ul>
+  <p class="micro" style="margin-top:16px">{copy.facetHeads.theme}</p>
+  <ul>{meta.themes.map((t) => <li>{t.label}</li>)}</ul>
+  <p class="micro" style="margin-top:16px">{copy.facetHeads.platform}</p>
+  <ul>{meta.platforms.map((t) => <li>{t.label}</li>)}</ul>
+
+  <h3 class="micro">{copy.aboutHeads.sources}</h3>
+  <p>{copy.sourcesText(sources.length)}</p>
+  <ul>
+    {
+      sources.map(([h, n]) => (
+        <li class="cat">
+          <span class="micro" style="min-width:2.5em">{n}</span>
+          <span>{h}</span>
+        </li>
+      ))
+    }
+  </ul>
+  <p>General Debate statements link to transcripts on {transcriptHosts.join(' and ')}, pending verification against the official texts.</p>
+
+  {
+    quotes.length > 0 && (
+      <>
+        <h3 class="micro">{copy.aboutHeads.quotes}</h3>
+        <ul>
+          {quotes.map((q) => (
+            <li>
+              <blockquote>
+                <p style="margin:0">&ldquo;{q.text}&rdquo;</p>
+              </blockquote>
+              <p class="micro" style="margin:4px 0 0">
+                {q.who}, {longDate(q.date)}.{' '}
+                <a href={q.source} rel="noopener" target="_blank">
+                  {copy.source}
+                </a>
+              </p>
+            </li>
+          ))}
+        </ul>
+      </>
+    )
+  }
+
+  <h3 class="micro">{copy.aboutHeads.data}</h3>
+  <p>
+    <a class="dl" href={`${base}/unga81-ai-events-dataset.xlsx`} download="UNGA81 AI events public dataset.xlsx">{copy.download}</a>
+  </p>
+  <p class="micro">Status as at {longDate(meta.as_at)}</p>
+
+  <h3 class="micro">{copy.aboutHeads.author}</h3>
+  <p class="byline">
+    <strong>{meta.author.name}</strong>
+    {meta.author.title}<br />{meta.author.office}
+  </p>
+  <p class="mute">{meta.disclaimer}</p>
+</section>
+<div class="about-scrim" data-close-about></div>
+<script>
+  const about = document.getElementById('about')!;
+  let opener: HTMLElement | null = null;
+  const open = (from: HTMLElement | null) => {
+    opener = from;
+    about.classList.add('open');
+    about.setAttribute('role', 'dialog');
+    about.setAttribute('aria-modal', 'true');
+    document.body.style.overflow = 'hidden';
+    about.focus();
+  };
+  const close = () => {
+    about.classList.remove('open');
+    about.removeAttribute('role');
+    about.removeAttribute('aria-modal');
+    document.body.style.overflow = '';
+    opener?.focus();
+  };
+  document.addEventListener('click', (ev) => {
+    const t = ev.target as HTMLElement;
+    const a = t.closest('a[href$="#about"]');
+    if (a) {
+      ev.preventDefault();
+      open(a as HTMLElement);
+    } else if (t.closest('[data-close-about]')) close();
+  });
+  document.addEventListener('keydown', (ev) => {
+    if (!about.classList.contains('open')) return;
+    if (ev.key === 'Escape') close();
+    if (ev.key === 'Tab') {
+      const f = [...about.querySelectorAll<HTMLElement>('a[href], button')];
+      const first = f[0];
+      const last = f[f.length - 1];
+      if (ev.shiftKey && (document.activeElement === first || document.activeElement === about)) {
+        ev.preventDefault();
+        last.focus();
+      } else if (!ev.shiftKey && document.activeElement === last) {
+        ev.preventDefault();
+        first.focus();
+      }
+    }
+  });
+  if (location.hash === '#about') open(null);
+</script>

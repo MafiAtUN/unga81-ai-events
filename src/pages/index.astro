@@ -1,0 +1,29 @@
+---
+import Base from '../layouts/Base.astro';
+import Masthead from '../components/Masthead.astro';
+import IndexTable from '../components/IndexTable.astro';
+import About from '../components/About.astro';
+import Footer from '../components/Footer.astro';
+import { meta, S, base, abs } from '../lib/load';
+import { copy } from '../lib/copy';
+---
+
+<Base
+  title={copy.title(meta)}
+  description={copy.description(S)}
+  url={meta.site}
+  image={abs('/og/cover.png')}
+  imageAlt={`${meta.headline}. ${copy.deck1(S)} ${copy.deck2(S)}`}
+  preloadData={`${base}/data/stage.json`}
+>
+  <a class="skip" href="#views">Skip to the views</a>
+  <Masthead />
+  <main id="views">
+    <div class="wrap">
+      <noscript><p class="noscript">{copy.noJs}</p></noscript>
+    </div>
+    <IndexTable />
+  </main>
+  <Footer />
+  <About />
+</Base>

@@ -1,0 +1,234 @@
+{
+ "as_at": "2026-09-26",
+ "window": {
+  "from": "2026-09-08",
+  "to": "2026-09-29"
+ },
+ "site": "https://mafiatun.github.io/unga81-ai-events/",
+ "author": {
+  "name": "Mafizul Islam",
+  "title": "Senior Adviser on Data, AI and Strategic Foresight",
+  "office": "Office of the President of the UN General Assembly"
+ },
+ "disclaimer": "Compiled by Mafizul Islam from public UN, organiser and media listings. Personal analysis, not an official UN publication.",
+ "headline": "The week AI took the floor",
+ "deck": "133 UN linked events, sessions and launches on AI. 103 of them in high level week.",
+ "conveners": [
+  {
+   "key": "un_organs",
+   "label": "UN organs and leadership",
+   "long": "General Assembly, Security Council, President of the General Assembly, Secretary-General, Scientific Panel",
+   "color": "#F8C534",
+   "mark": "filled"
+  },
+  {
+   "key": "un_system",
+   "label": "UN system entities",
+   "color": "#009EDB",
+   "mark": "filled"
+  },
+  {
+   "key": "member_states",
+   "label": "Member States and regional",
+   "color": "#F29BD0",
+   "mark": "filled"
+  },
+  {
+   "key": "civil_society",
+   "label": "Civil society and academia",
+   "long": "Civil society, think tanks and academia",
+   "color": "#1DC79B",
+   "mark": "filled"
+  },
+  {
+   "key": "business",
+   "label": "Business, media, philanthropy",
+   "color": "#DB503F",
+   "mark": "filled"
+  },
+  {
+   "key": "not_shown",
+   "label": "Organiser not identified",
+   "long": "Listed on UN Web TV without a named organiser",
+   "color": "#7E8B8E",
+   "mark": "hollow"
+  }
+ ],
+ "types": [
+  {
+   "key": "event",
+   "label": "Event or session",
+   "shape": "circle"
+  },
+  {
+   "key": "launch",
+   "label": "Launch, commitment or report",
+   "shape": "diamond"
+  },
+  {
+   "key": "official",
+   "label": "Official meeting or statement",
+   "shape": "square"
+  }
+ ],
+ "locations": [
+  {
+   "key": "new_york",
+   "label": "New York"
+  },
+  {
+   "key": "virtual",
+   "label": "Virtual"
+  },
+  {
+   "key": "outside_ny",
+   "label": "Outside New York"
+  }
+ ],
+ "platforms": [
+  {
+   "key": "digital_unga",
+   "label": "Digital@UNGA 2026"
+  },
+  {
+   "key": "climate_week",
+   "label": "Climate Week NYC"
+  },
+  {
+   "key": "digital_cooperation_day",
+   "label": "UN Digital Cooperation Day"
+  },
+  {
+   "key": "sdg_media_zone",
+   "label": "SDG Media Zone"
+  },
+  {
+   "key": "science_summit",
+   "label": "Science Summit at UNGA81"
+  },
+  {
+   "key": "concordia",
+   "label": "Concordia Annual Summit"
+  },
+  {
+   "key": "cgi",
+   "label": "Clinton Global Initiative"
+  },
+  {
+   "key": "standalone",
+   "label": "Standalone event or launch"
+  }
+ ],
+ "themes": [
+  {
+   "key": "governance",
+   "label": "Governance and safety"
+  },
+  {
+   "key": "science",
+   "label": "Science and evidence"
+  },
+  {
+   "key": "development",
+   "label": "Development and SDGs"
+  },
+  {
+   "key": "capacity",
+   "label": "Capacity building, compute and digital public infrastructure"
+  },
+  {
+   "key": "peace_security",
+   "label": "Peace, security and military"
+  },
+  {
+   "key": "rights_info",
+   "label": "Human rights and information integrity"
+  },
+  {
+   "key": "climate_energy",
+   "label": "Climate and energy"
+  },
+  {
+   "key": "health",
+   "label": "Health"
+  },
+  {
+   "key": "education_children",
+   "label": "Education and children"
+  },
+  {
+   "key": "economy_work",
+   "label": "Economy and work"
+  },
+  {
+   "key": "gender_inclusion",
+   "label": "Gender and inclusion"
+  }
+ ],
+ "debate_groups": [
+  {
+   "key": "african",
+   "label": "African States"
+  },
+  {
+   "key": "asia_pacific",
+   "label": "Asia Pacific States"
+  },
+  {
+   "key": "eastern_european",
+   "label": "Eastern European States"
+  },
+  {
+   "key": "latin_america_caribbean",
+   "label": "Latin American and Caribbean States"
+  },
+  {
+   "key": "western_european_other",
+   "label": "Western European and other States"
+  }
+ ],
+ "method": "An item is an event, a session within a larger programme, a launch, a commitment, a report or an official meeting linked to UNGA81 with UN involvement between 8 and 29 September 2026, where AI was the main subject or a named strand. Passing mentions are excluded. An item qualifies only if the UN is involved: organised or co organised by a UN organ or entity, held at UN Headquarters or on a UN platform, part of a UN run programme such as Digital@UNGA, or with a UN entity taking part. Independent forums held the same week, such as Climate Week NYC, Concordia and the Clinton Global Initiative, are excluded. Sessions are counted individually where a programme lists them. Items from UNGA80 are excluded. The convener is the lead organiser. The General Debate count covers Member State statements delivered from 22 to 25 September, compiled from UN English channel transcripts and pending verification against official texts. A statement counts when it mentions AI, however briefly. Status as at 26 September 2026.",
+ "quotes": [
+  {
+   "text": "Nowhere is the pace of change more evident today than in artificial intelligence.",
+   "who": "President of the General Assembly",
+   "date": "2026-09-22",
+   "source": "https://www.un.org/pga/81/documents/speeches/general-debate-opening-22-september-2026/",
+   "verified": true
+  },
+  {
+   "text": "We cannot allow an arms race for control of AI to carry us over the precipice.",
+   "who": "President of the General Assembly",
+   "date": "2026-09-22",
+   "source": "https://www.un.org/pga/81/documents/speeches/general-debate-opening-22-september-2026/",
+   "verified": true
+  },
+  {
+   "text": "Artificial intelligence is the most consequential technology in the history of mankind.",
+   "who": "President of Finland",
+   "date": "2026-09-22",
+   "source": "https://www.presidentti.fi/en/statement-by-the-president-of-the-republic-of-finland-alexander-stubb-at-the-general-debate-of-the-81st-session-of-the-un-general-assembly-in-new-york-on-22-september-2026/",
+   "verified": true
+  },
+  {
+   "text": "The danger is not technology. The danger is technology without accountability.",
+   "who": "Secretary-General",
+   "date": "2026-09-22",
+   "source": "https://transcripts.un.org/en/asset/k17/k17s3dutob",
+   "verified": false
+  }
+ ],
+ "expected": {
+  "items": 133,
+  "peak_day": "2026-09-21",
+  "peak": 24,
+  "member_states_spoke": 139,
+  "member_states_mentioned_ai": 91,
+  "statements": 143,
+  "high_level_week": 103
+ },
+ "high_level_week": {
+  "from": "2026-09-21",
+  "to": "2026-09-26"
+ }
+}

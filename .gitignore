@@ -1,0 +1,12 @@
+node_modules/
+dist/
+.astro/
+.lighthouseci/
+test-results/
+playwright-report/
+.DS_Store
+.deepeval/
+# The build brief and the source infographic stay local. Data is extracted from the brief into src/data.
+UNGA81 AI site build brief.md
+design/
+/UNGA81 AI events public dataset.xlsx

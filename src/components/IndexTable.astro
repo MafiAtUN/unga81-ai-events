@@ -1,0 +1,142 @@
+---
+import { events, debate, meta, S } from '../lib/load';
+import { copy } from '../lib/copy';
+import { dateOrder, microDate } from '../lib/data';
+import { colorOf, shapeOf, swatchSvg } from '../lib/marks';
+
+const label = (list: { key: string; label: string }[], key: string) => list.find((o) => o.key === key)?.label ?? key;
+const convIndex = new Map(meta.conveners.map((c, i) => [c.key, i]));
+const items = dateOrder(events, meta);
+const groupLabel = (g: string) =>
+  meta.debate_groups.find((o) => o.key === g)?.label ?? (g === 'un_official' ? 'United Nations' : g === 'observer' ? 'Observer' : g);
+---
+
+<section class="index-section wrap" id="index" aria-labelledby="index-title">
+  <h2 class="sr-only" id="index-title">Index</h2>
+  <div class="index-tabs" role="tablist" aria-label="Index lists">
+    <button class="mbtn" role="tab" id="tab-items" aria-controls="panel-items" aria-selected="true">{copy.itemsTab}</button>
+    <button class="mbtn" role="tab" id="tab-statements" aria-controls="panel-statements" aria-selected="false" tabindex="-1">{copy.statementsTab}</button>
+  </div>
+
+  <div class="index-panel" id="panel-items" role="tabpanel" aria-labelledby="tab-items">
+    <h2>Items</h2>
+    <div class="index-tools">
+      <p class="micro" id="index-count" aria-live="polite">{S.items} ITEMS</p>
+      <button class="mbtn" id="csv" type="button">{copy.downloadCsv}</button>
+    </div>
+    <table class="idx" id="idx-items">
+      <caption class="sr-only">Every item, with every field. Select a column heading to sort.</caption>
+      <thead class="micro">
+        <tr>
+          <th scope="col" data-key="date" aria-sort="ascending"><button class="sort" type="button">{copy.cols.date}</button></th>
+          <th scope="col" data-key="title"><button class="sort" type="button">{copy.cols.title}</button></th>
+          <th scope="col" data-key="conv"><button class="sort" type="button">{copy.cols.conv}</button></th>
+          <th scope="col" data-key="platform"><button class="sort" type="button">{copy.cols.platform}</button></th>
+          <th scope="col" data-key="type"><button class="sort" type="button">{copy.cols.type}</button></th>
+          <th scope="col" data-key="loc"><button class="sort" type="button">{copy.cols.loc}</button></th>
+          <th scope="col">{copy.cols.themes}</th>
+          <th scope="col" data-key="org"><button class="sort" type="button">{copy.cols.organisers}</button></th>
+          <th scope="col">{copy.cols.source}</th>
+        </tr>
+      </thead>
+      <tbody>
+        {
+          items.map((e, i) => (
+            <tr
+              data-id={e.id}
+              data-i={i}
+              data-date={e.date ?? '9999'}
+              data-title={e.title}
+              data-conv={convIndex.get(e.conv)}
+              data-platform={label(meta.platforms, e.platform)}
+              data-type={label(meta.types, e.type)}
+              data-loc={label(meta.locations, e.loc)}
+              data-org={e.organisers}
+            >
+              <td class="date micro">{e.date ? microDate(e.date) : ''}</td>
+              <td class="t-cell">
+                {e.detail || e.milestone ? (
+                  <details>
+                    <summary>
+                      <span class="t">{e.title}</span>
+                      <span class="more" aria-hidden="true">
+                        MORE
+                      </span>
+                    </summary>
+                    {e.milestone && <p class="detail">{e.milestone}</p>}
+                    {e.detail && <p class="detail">{e.detail}</p>}
+                  </details>
+                ) : (
+                  <span class="t">{e.title}</span>
+                )}
+              </td>
+              <td data-label={copy.cols.conv}>
+                <span class="sw">
+                  <Fragment set:html={swatchSvg(shapeOf(e), colorOf(meta, e.conv))} />
+                  {label(meta.conveners, e.conv)}
+                </span>
+              </td>
+              <td data-label={copy.cols.platform}>{label(meta.platforms, e.platform)}</td>
+              <td data-label={copy.cols.type}>{label(meta.types, e.type)}</td>
+              <td data-label={copy.cols.loc}>{label(meta.locations, e.loc)}</td>
+              <td data-label={copy.cols.themes}>{e.themes.map((t) => label(meta.themes, t)).join(', ')}</td>
+              <td data-label={copy.cols.organisers}>{e.organisers}</td>
+              <td class="src" data-label={copy.cols.source}>
+                <a href={e.source} rel="noopener" target="_blank">
+                  {copy.source}
+                  <span class="sr-only"> for {e.title}</span>
+                </a>
+              </td>
+            </tr>
+          ))
+        }
+      </tbody>
+    </table>
+  </div>
+
+  <div class="index-panel" id="panel-statements" role="tabpanel" aria-labelledby="tab-statements">
+    <h2>General Debate</h2>
+    <p class="micro">{copy.statementsIntro(S)}</p>
+    <table class="idx" id="idx-statements">
+      <caption class="sr-only">General Debate statements in speaking order.</caption>
+      <thead class="micro">
+        <tr>
+          <th scope="col">{copy.cols.order}</th>
+          <th scope="col">{copy.cols.date}</th>
+          <th scope="col">{copy.cols.country}</th>
+          <th scope="col">{copy.cols.speaker}</th>
+          <th scope="col">{copy.cols.gist}</th>
+          <th scope="col">{copy.cols.links}</th>
+        </tr>
+      </thead>
+      <tbody>
+        {
+          debate.map((s) => (
+            <tr data-order={s.order} data-date={s.date} data-country={s.country}>
+              <td class="num micro">{s.order}</td>
+              <td class="date micro">{microDate(s.date)}</td>
+              <td class="t-cell">
+                <span class="t">{s.country}</span>
+                <span class="micro" style="display:block">{groupLabel(s.group)}</span>
+              </td>
+              <td data-label={copy.cols.speaker}>{s.speaker}</td>
+              {s.raised_ai ? <td data-label={copy.cols.gist}>{s.ai_gist}</td> : <td />}
+              <td class="src" data-label={copy.cols.links}>
+                {s.statement_url && (
+                  <a href={s.statement_url} rel="noopener" target="_blank">
+                    {copy.statement}
+                    <span class="sr-only"> by {s.country}</span>
+                  </a>
+                )}{' '}
+                <a href={s.transcript_source} rel="noopener" target="_blank">
+                  {copy.transcript}
+                  <span class="sr-only"> for {s.country}</span>
+                </a>
+              </td>
+            </tr>
+          ))
+        }
+      </tbody>
+    </table>
+  </div>
+</section>
