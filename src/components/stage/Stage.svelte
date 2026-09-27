@@ -519,6 +519,11 @@
     idx.update(active, set, S, words);
   });
 
+  // Tell the page which view is showing, so the space reserved for the chart follows it.
+  $effect(() => {
+    document.documentElement.dataset.view = view;
+  });
+
   // ---------------------------------------------------------------- live summary
   let live = $derived(M ? `${copy.viewNames[view]} view. ${words}` : '');
 
@@ -837,7 +842,7 @@
 </div>
 
 <style>
-  .stage-root {
+  :global(html:not([data-view='index'])) .stage-root {
     min-height: 100vh;
   }
   .toolbar {

@@ -613,6 +613,10 @@ noscript .noscript,
 .js .stage-host {
   min-height: 100vh;
 }
+/* The Index view has no chart to reserve space for */
+.js[data-view='index'] .stage-host {
+  min-height: 0;
+}
 
 /* CSS marks for the Index, same shapes as the charts */
 .mk {
