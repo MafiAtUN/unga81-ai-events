@@ -406,3 +406,17 @@ test('who took part: every link resolves', async ({ page, request }, info) => {
   const hrefs = await page.locator('main a[href]').evaluateAll((as) => as.map((a) => (a as HTMLAnchorElement).href));
   for (const h of [...new Set(hrefs)].filter((h) => !h.includes('#'))) expect((await request.get(h)).status(), h).toBe(200);
 });
+
+test('a page whose scripts were replaced by a new deploy reloads itself once and works', async ({ page }, info) => {
+  test.skip(info.project.name !== 'desktop', 'one project is enough');
+  let navs = 0;
+  page.on('framenavigated', (f) => f === page.mainFrame() && navs++);
+  // First load: every script is gone, as after a new deploy. After the reload they exist again.
+  await page.route(/_assets\/.*\.js$/, (route) => (navs <= 1 ? route.fulfill({ status: 404, body: '' }) : route.continue()));
+  await page.goto('./?v=floor');
+  await page.waitForSelector('.stage svg', { timeout: 20000 });
+  expect(navs).toBe(2);
+  await page.locator('.toolbar').getByRole('button', { name: 'FILTER' }).click();
+  await page.locator('#filters').getByRole('button', { name: /^Health/ }).click();
+  await expect(page.locator('.sentence')).toContainText('health');
+});
