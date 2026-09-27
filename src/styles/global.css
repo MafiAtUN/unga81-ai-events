@@ -191,12 +191,18 @@ button {
   padding-top: 28px;
   padding-bottom: 8px;
 }
+.credit {
+  margin: 0 0 20px;
+}
 .nerd-lab {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   gap: 12px;
-  margin: 0 0 20px;
   color: var(--mute);
+  text-decoration: none;
+}
+.nerd-lab:hover span {
+  color: var(--ink);
 }
 .nerd-lab svg {
   height: 20px;
