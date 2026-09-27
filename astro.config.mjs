@@ -6,7 +6,16 @@ export default defineConfig({
   base: '/unga81-ai-events',
   trailingSlash: 'ignore',
   output: 'static',
-  integrations: [svelte()],
+  integrations: [
+    svelte(),
+    {
+      name: 'afterpaint-directive',
+      hooks: {
+        'astro:config:setup': ({ addClientDirective }) =>
+          addClientDirective({ name: 'afterpaint', entrypoint: './src/directives/afterpaint.js' }),
+      },
+    },
+  ],
   build: { inlineStylesheets: 'always', assets: '_assets' },
   devToolbar: { enabled: false },
   vite: { build: { assetsInlineLimit: 0 } },

@@ -4,6 +4,7 @@ import Masthead from '../components/Masthead.astro';
 import IndexTable from '../components/IndexTable.astro';
 import About from '../components/About.astro';
 import Footer from '../components/Footer.astro';
+import Stage from '../components/stage/Stage.svelte';
 import { meta, S, base, abs } from '../lib/load';
 import { copy } from '../lib/copy';
 ---
@@ -14,11 +15,11 @@ import { copy } from '../lib/copy';
   url={meta.site}
   image={abs('/og/cover.png')}
   imageAlt={`${meta.headline}. ${copy.deck1(S)} ${copy.deck2(S)}`}
-  preloadData={`${base}/data/stage.json`}
 >
   <a class="skip" href="#views">Skip to the views</a>
   <Masthead />
   <main id="views">
+    <div class="stage-host"><Stage client:afterpaint initial={{ words: `Showing ${S.items} of ${S.items} items.`, method: copy.methodLine(meta) }} /></div>
     <div class="wrap">
       <noscript><p class="noscript">{copy.noJs}</p></noscript>
     </div>

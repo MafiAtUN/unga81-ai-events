@@ -3,7 +3,7 @@ module.exports = {
     collect: {
       startServerCommand: 'npx astro preview --port 4322 --ignore-lock',
       startServerReadyPattern: 'localhost',
-      url: ['http://localhost:4322/unga81-ai-events/'],
+      url: ['http://localhost:4322/unga81-ai-events/', 'http://localhost:4322/unga81-ai-events/e/e058/', 'http://localhost:4322/unga81-ai-events/country/kenya/'],
       numberOfRuns: 3,
     },
     assert: {

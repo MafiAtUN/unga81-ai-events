@@ -1,7 +1,16 @@
+/* Headline and tag glyphs only, weight 800 at 75 percent width: tiny, preloaded first */
+@font-face {
+  font-family: 'Archivo Display';
+  font-style: normal;
+  font-display: block;
+  font-weight: 800;
+  font-stretch: 75%;
+  src: url('../fonts/archivo-display.woff2') format('woff2');
+}
 @font-face {
   font-family: 'Archivo';
   font-style: normal;
-  font-display: swap;
+  font-display: block;
   font-weight: 600 800;
   font-stretch: 62% 87%;
   src: url('../fonts/archivo.woff2') format('woff2');
@@ -10,7 +19,7 @@
 @font-face {
   font-family: 'Archivo';
   font-style: normal;
-  font-display: swap;
+  font-display: block;
   font-weight: 600 800;
   font-stretch: 62% 87%;
   src: url('../fonts/archivo-ext.woff2') format('woff2');
@@ -19,7 +28,7 @@
 @font-face {
   font-family: 'Source Serif';
   font-style: normal;
-  font-display: swap;
+  font-display: block;
   font-weight: 400;
   src: url('../fonts/serif.woff2') format('woff2');
   unicode-range: U+0020-007E, U+00A0-00FF, U+2009, U+2018-201D, U+2026, U+202F, U+20AC;
@@ -27,7 +36,7 @@
 @font-face {
   font-family: 'Source Serif';
   font-style: normal;
-  font-display: swap;
+  font-display: block;
   font-weight: 400;
   src: url('../fonts/serif-ext.woff2') format('woff2');
   unicode-range: U+0106-0107, U+010C-010D, U+0112-0113, U+0116-0117, U+011E-011F, U+015E-015F, U+0160-0161;
@@ -43,7 +52,7 @@
 @font-face {
   font-family: 'Martian Mono';
   font-style: normal;
-  font-display: swap;
+  font-display: block;
   font-weight: 500;
   src: url('../fonts/mono.woff2') format('woff2');
   unicode-range: U+0020-007E, U+00A0-00FF, U+2009, U+2018-201D, U+2026, U+202F, U+20AC;
@@ -51,7 +60,7 @@
 @font-face {
   font-family: 'Martian Mono';
   font-style: normal;
-  font-display: swap;
+  font-display: block;
   font-weight: 500;
   src: url('../fonts/mono-ext.woff2') format('woff2');
   unicode-range: U+0106-0107, U+010C-010D, U+0112-0113, U+0116-0117, U+011E-011F, U+015E-015F, U+0160-0161;
@@ -75,6 +84,7 @@
   --c-not-shown: #7e8b8e;
 
   --display: 'Archivo', serif;
+  --headline: 'Archivo Display', 'Archivo', serif;
   --serif: 'Source Serif', serif;
   --mono: 'Martian Mono', monospace;
   --gutter: 16px;
@@ -190,7 +200,7 @@ button {
 .tag {
   background: var(--c-un-organs);
   color: var(--bg);
-  font-family: var(--display);
+  font-family: var(--headline);
   font-weight: 800;
   font-stretch: 75%;
   font-size: clamp(16px, 2.6vw, 30px);
@@ -200,9 +210,10 @@ button {
 }
 .kicker {
   color: var(--mute);
+  white-space: pre-wrap;
 }
 .headline {
-  font-family: var(--display);
+  font-family: var(--headline);
   font-weight: 800;
   font-stretch: 75%;
   line-height: 0.875;
@@ -217,7 +228,7 @@ button {
   font-variation-settings: 'opsz' 36;
   line-height: 1.2;
   margin: 0 0 12px;
-  max-width: 30ch;
+  max-width: 34em;
 }
 .deck .mute {
   display: block;
@@ -243,7 +254,7 @@ button {
   min-height: 48px;
 }
 .bar-title {
-  font-family: var(--display);
+  font-family: var(--headline);
   font-weight: 800;
   font-stretch: 75%;
   font-size: 22px;
@@ -596,4 +607,41 @@ noscript .noscript,
   * {
     scroll-behavior: auto !important;
   }
+}
+
+/* Reserve the stage before the island mounts, so nothing below it shifts */
+.js .stage-host {
+  min-height: 100vh;
+}
+
+/* CSS marks for the Index, same shapes as the charts */
+.mk {
+  width: 11px;
+  height: 11px;
+  flex: none;
+  background: var(--c);
+  display: inline-block;
+}
+.mk.circle {
+  border-radius: 50%;
+}
+.mk.square {
+  width: 10px;
+  height: 10px;
+}
+.mk.diamond {
+  width: 9px;
+  height: 9px;
+  transform: rotate(45deg);
+  margin: 0 1px;
+}
+.mk.ring {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: none;
+  border: 1.8px solid #7e8b8e;
+}
+.no-js .stage-host {
+  display: none;
 }

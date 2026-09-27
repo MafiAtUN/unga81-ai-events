@@ -1,0 +1,41 @@
+---
+import Base from '../../layouts/Base.astro';
+import ShareShell from '../../components/ShareShell.astro';
+import { events, debate, meta, S, base, abs } from '../../lib/load';
+import { copy } from '../../lib/copy';
+import { longDate, microDate } from '../../lib/data';
+import { miniHemicycle } from '../../lib/mini';
+import { colorOf, shapeOf, swatchSvg } from '../../lib/marks';
+
+export const getStaticPaths = () => events.map((e) => ({ params: { id: e.id }, props: { e } }));
+const { e } = Astro.props;
+const lab = (list: 'conveners' | 'types' | 'locations' | 'platforms' | 'themes', key: string) => meta[list].find((o) => o.key === key)?.label ?? key;
+const url = abs(`/e/${e.id}/`);
+const desc = `${copy.itemLine(S.items)}. ${e.date ? longDate(e.date) : ''}, ${lab('conveners', e.conv)}.`;
+---
+
+<Base preloadUi title={`${e.title}. ${copy.title(meta)}`} description={desc} url={url} image={abs(`/og/e/${e.id}.png`)} imageAlt={`${e.title}. ${copy.itemLine(S.items)}.`}>
+  <ShareShell hemicycle={miniHemicycle(events, debate, meta, { items: [e.id] })} label={`This item, enlarged and ringed among all ${S.items} items and the General Debate seats.`}>
+    <p class="micro">{e.date ? microDate(e.date) : ''}</p>
+    <h1>{e.title}</h1>
+    <p class="sw ui"><Fragment set:html={swatchSvg(shapeOf(e), colorOf(meta, e.conv), 16)} /> {lab('conveners', e.conv)}</p>
+    <p class="line">{copy.itemLine(S.items)}.</p>
+    <dl>
+      <dt class="micro">{copy.fields.platform}</dt><dd>{lab('platforms', e.platform)}</dd>
+      <dt class="micro">{copy.fields.type}</dt><dd>{lab('types', e.type)}</dd>
+      <dt class="micro">{copy.fields.loc}</dt><dd>{lab('locations', e.loc)}</dd>
+      {e.organisers && <><dt class="micro">{copy.fields.organisers}</dt><dd>{e.organisers}</dd></>}
+      {e.milestone && <><dt class="micro">{copy.fields.milestone}</dt><dd class="line">{e.milestone}</dd></>}
+      {e.detail && <><dt class="micro">{copy.fields.detail}</dt><dd>{e.detail}</dd></>}
+      <dt class="micro">{copy.fields.themes}</dt><dd>{e.themes.map((t) => lab('themes', t)).join(', ')}</dd>
+      <dt class="micro">{copy.fields.status}</dt><dd>{copy.status[e.status]}</dd>
+      <dt class="micro">{copy.fields.confidence}</dt><dd>{copy.confidence[e.confidence]}</dd>
+      {e.pga && <><dt class="micro">{copy.fields.pga}</dt><dd>Yes</dd></>}
+    </dl>
+    <div class="actions">
+      <a class="mbtn" href={`${base}/?sel=${e.id}`}>{copy.seeAll(S.items)}</a>
+      <a class="mbtn" href={e.source} rel="noopener" target="_blank">{copy.source}</a>
+    </div>
+    <p class="cite">{copy.citation(meta)}</p>
+  </ShareShell>
+</Base>

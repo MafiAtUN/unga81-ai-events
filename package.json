@@ -7,9 +7,10 @@
     "validate": "node scripts/validate.mjs",
     "lint:copy": "node scripts/copy-lint.mjs",
     "dev": "astro dev",
-    "build": "node scripts/validate.mjs && astro build && node scripts/copy-lint.mjs && node scripts/budgets.mjs",
+    "build": "node scripts/validate.mjs && node scripts/contrast.mjs && astro build && node scripts/copy-lint.mjs && node scripts/budgets.mjs",
     "preview": "astro preview",
-    "test": "playwright test"
+    "test": "playwright test",
+    "contrast": "node scripts/contrast.mjs --verbose"
   },
   "dependencies": {
     "@astrojs/svelte": "^9.0.1",
@@ -31,6 +32,7 @@
   "devDependencies": {
     "@axe-core/playwright": "^4.13.0",
     "@lhci/cli": "^0.15.1",
-    "@playwright/test": "^1.63.0"
+    "@playwright/test": "^1.63.0",
+    "tsx": "^4.23.15"
   }
 }

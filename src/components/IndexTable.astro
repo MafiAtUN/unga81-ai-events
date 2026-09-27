@@ -2,7 +2,7 @@
 import { events, debate, meta, S } from '../lib/load';
 import { copy } from '../lib/copy';
 import { dateOrder, microDate } from '../lib/data';
-import { colorOf, shapeOf, swatchSvg } from '../lib/marks';
+import { colorOf, shapeOf } from '../lib/marks';
 
 const label = (list: { key: string; label: string }[], key: string) => list.find((o) => o.key === key)?.label ?? key;
 const convIndex = new Map(meta.conveners.map((c, i) => [c.key, i]));
@@ -21,7 +21,7 @@ const groupLabel = (g: string) =>
   <div class="index-panel" id="panel-items" role="tabpanel" aria-labelledby="tab-items">
     <h2>Items</h2>
     <div class="index-tools">
-      <p class="micro" id="index-count" aria-live="polite">{S.items} ITEMS</p>
+      <p class="micro" id="index-count">{S.items} ITEMS</p>
       <button class="mbtn" id="csv" type="button">{copy.downloadCsv}</button>
     </div>
     <table class="idx" id="idx-items">
@@ -45,13 +45,7 @@ const groupLabel = (g: string) =>
             <tr
               data-id={e.id}
               data-i={i}
-              data-date={e.date ?? '9999'}
-              data-title={e.title}
               data-conv={convIndex.get(e.conv)}
-              data-platform={label(meta.platforms, e.platform)}
-              data-type={label(meta.types, e.type)}
-              data-loc={label(meta.locations, e.loc)}
-              data-org={e.organisers}
             >
               <td class="date micro">{e.date ? microDate(e.date) : ''}</td>
               <td class="t-cell">
@@ -72,7 +66,7 @@ const groupLabel = (g: string) =>
               </td>
               <td data-label={copy.cols.conv}>
                 <span class="sw">
-                  <Fragment set:html={swatchSvg(shapeOf(e), colorOf(meta, e.conv))} />
+                  <span class={`mk ${shapeOf(e)}`} style={`--c:${colorOf(meta, e.conv)}`} aria-hidden="true" />
                   {label(meta.conveners, e.conv)}
                 </span>
               </td>
@@ -112,7 +106,7 @@ const groupLabel = (g: string) =>
       <tbody>
         {
           debate.map((s) => (
-            <tr data-order={s.order} data-date={s.date} data-country={s.country}>
+            <tr data-order={s.order}>
               <td class="num micro">{s.order}</td>
               <td class="date micro">{microDate(s.date)}</td>
               <td class="t-cell">

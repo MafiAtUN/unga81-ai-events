@@ -15,5 +15,7 @@ export default defineConfig({
   projects: [
     { name: 'desktop', use: { ...devices['Desktop Chrome'], viewport: { width: 1280, height: 900 } } },
     { name: 'phone', use: { ...devices['Pixel 7'] } },
+    // WebKit on an iPhone profile, the closest automated stand in for iOS Safari.
+    { name: 'iphone', use: { ...devices['iPhone 13'] }, grep: /SAVE IMAGE|numbers on screen|reduced motion/ },
   ],
 });

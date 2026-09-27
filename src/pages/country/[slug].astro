@@ -1,0 +1,56 @@
+---
+import Base from '../../layouts/Base.astro';
+import ShareShell from '../../components/ShareShell.astro';
+import { events, debate, meta, S, base, abs, countryPages } from '../../lib/load';
+import { copy } from '../../lib/copy';
+import { longDate, microDate } from '../../lib/data';
+import { miniHemicycle } from '../../lib/mini';
+import { colorOf, shapeOf, swatchSvg } from '../../lib/marks';
+
+export const getStaticPaths = () => countryPages().map((c) => ({ params: { slug: c.slug }, props: { c } }));
+const { c } = Astro.props;
+const s = c.statement;
+const url = abs(`/country/${c.slug}/`);
+const desc = s.raised_ai
+  ? `${s.country} in the General Debate, ${longDate(s.date)}: ${s.ai_gist}`
+  : `${s.country} and AI at UNGA81: ${c.items.length} ${c.items.length === 1 ? 'item' : 'items'} it convened or co hosted.`;
+---
+
+<Base preloadUi title={`${s.country}. ${copy.title(meta)}`} description={desc} url={url} image={abs(`/og/country/${c.slug}.png`)} imageAlt={`${s.country}. ${meta.headline}.`}>
+  <ShareShell
+    hemicycle={miniHemicycle(events, debate, meta, { items: c.items.map((e) => e.id), seat: s.member_state && s.raised_ai ? s.order : null })}
+    label={`The ${S.items} items and the General Debate seats${c.items.length ? `, with the items ${s.country} convened or co hosted ringed` : ''}.`}
+  >
+    <p class="micro">{copy.countryStatement}</p>
+    <h1>{s.country}</h1>
+    <p class="micro">{microDate(s.date)}</p>
+    <p>{s.speaker}</p>
+    {s.raised_ai && <p class="line">{s.ai_gist}</p>}
+    <div class="actions">
+      {s.raised_ai && <a class="mbtn" href={s.transcript_source} rel="noopener" target="_blank">{copy.transcript}</a>}
+      {s.statement_url && <a class="mbtn" href={s.statement_url} rel="noopener" target="_blank">{copy.statement}</a>}
+    </div>
+    {
+      c.items.length > 0 && (
+        <>
+          <p class="micro" style="margin-top:28px">{copy.countryItems}</p>
+          <ul>
+            {c.items.map((e) => (
+              <li>
+                <span class="micro" style="display:block">{e.date ? microDate(e.date) : ''}</span>
+                <span class="sw">
+                  <Fragment set:html={swatchSvg(shapeOf(e), colorOf(meta, e.conv), 14)} />
+                  <a href={`${base}/e/${e.id}/`}>{e.title}</a>
+                </span>
+              </li>
+            ))}
+          </ul>
+        </>
+      )
+    }
+    <div class="actions">
+      <a class="mbtn" href={`${base}/?q=${encodeURIComponent(s.country)}`}>{copy.exploreAll(S.items)}</a>
+    </div>
+    <p class="cite">{copy.citation(meta)}</p>
+  </ShareShell>
+</Base>

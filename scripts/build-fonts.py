@@ -15,13 +15,20 @@ SRC = {
     "serif-italic": f"{FS}/source-serif-4/files/source-serif-4-latin-opsz-italic.woff2",
     "mono": f"{FS}/martian-mono/files/martian-mono-latin-wdth-normal.woff2",
 }
-# Basic Latin, Latin 1, typographic quotes, ellipsis, euro
-UNICODES = list(range(0x20, 0x7F)) + list(range(0xA0, 0x100)) + [
-    0x2018, 0x2019, 0x201C, 0x201D, 0x2026, 0x20AC, 0x2009, 0x202F,
-]
+import json, re
 
+# Basic Latin, typographic quotes and ellipsis, plus every Latin 1 character the data and copy use.
+# Rerun this script if new data brings new accented letters.
+_text = "".join(open(p, encoding="utf-8").read() for p in ["src/data/events.json", "src/data/debate.json", "src/data/meta.json", "src/lib/copy.ts"])
+_used = {ord(c) for c in _text if 0xA0 <= ord(c) <= 0xFF}
+UNICODES = list(range(0x20, 0x7F)) + sorted(_used | {0xA0, 0xB7}) + [0x2018, 0x2019, 0x201C, 0x201D, 0x2026, 0x20AC, 0x2009, 0x202F]
+print("latin 1 in use:", "".join(chr(c) for c in sorted(_used)))
 
-def make(name, axes, out, flavor):
+# Display face for the headline and tag only, so the largest text paints early.
+_meta = json.load(open("src/data/meta.json", encoding="utf-8"))
+DISPLAY = sorted({ord(c) for c in _meta["headline"] + "UNGA81 HIGH LEVEL WEEK" + "\u2026 "})
+
+def make(name, axes, out, flavor, unicodes=None):
     font = TTFont(SRC[name], lazy=False)
     opts = subset.Options()
     opts.layout_features = ["kern", "liga", "tnum", "lnum", "case"]
@@ -29,7 +36,7 @@ def make(name, axes, out, flavor):
     opts.desubroutinize = True
     opts.name_IDs = ["*"]
     sub = subset.Subsetter(opts)
-    sub.populate(unicodes=UNICODES)
+    sub.populate(unicodes=unicodes or UNICODES)
     sub.subset(font)
     font = instancer.instantiateVariableFont(font, axes)
     font.flavor = flavor
@@ -38,6 +45,7 @@ def make(name, axes, out, flavor):
 
 
 # Web (variable where the brief needs more than one setting)
+make("archivo", {"wght": 800, "wdth": 75}, "src/fonts/archivo-display.woff2", "woff2", DISPLAY)
 make("archivo", {"wght": (600, 800), "wdth": (62, 87)}, "src/fonts/archivo.woff2", "woff2")
 make("serif", {"wght": 400, "opsz": (14, 36)}, "src/fonts/serif.woff2", "woff2")
 make("serif-italic", {"wght": 450, "opsz": 18}, "src/fonts/serif-italic.woff2", "woff2")

@@ -1,0 +1,119 @@
+---
+import { meta, base } from '../lib/load';
+import { copy } from '../lib/copy';
+interface Props {
+  hemicycle: string;
+  label: string;
+}
+const { hemicycle, label } = Astro.props;
+---
+
+<a class="skip" href="#main">Skip to the content</a>
+<header class="wrap share-head">
+  <div class="tagrow">
+    <span class="tag">{copy.tag}</span>
+    <span class="kicker micro">{copy.kicker(meta)}</span>
+  </div>
+  <p class="share-title"><a href={`${base}/`}>{meta.headline}</a></p>
+</header>
+<main id="main" class="wrap share-main">
+  <figure class="share-fig">
+    <div role="img" aria-label={label} set:html={hemicycle} />
+  </figure>
+  <div class="share-body"><slot /></div>
+</main>
+<footer class="site-foot wrap">
+  <p>{meta.disclaimer}</p>
+  <a class="mbtn" href={`${base}/#about`}>{copy.about}</a>
+</footer>
+
+<style is:global>
+  .share-head {
+    padding-top: 24px;
+  }
+  .share-title {
+    font-family: var(--display);
+    font-weight: 800;
+    font-stretch: 75%;
+    font-size: clamp(36px, 7vw, 64px);
+    line-height: 0.9;
+    margin: 18px 0 12px;
+  }
+  .share-title a {
+    text-decoration: none;
+  }
+  .share-main {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 24px;
+    padding-top: 16px;
+    padding-bottom: 40px;
+    border-top: 1px solid var(--hair);
+  }
+  @media (min-width: 900px) {
+    .share-main {
+      grid-template-columns: minmax(0, 5fr) minmax(0, 6fr);
+      gap: 48px;
+      align-items: start;
+    }
+  }
+  .share-fig {
+    margin: 0;
+  }
+  .share-fig svg {
+    width: 100%;
+    height: auto;
+    display: block;
+  }
+  .share-body h1 {
+    font-family: var(--display);
+    font-weight: 800;
+    font-stretch: 75%;
+    font-size: clamp(32px, 5vw, 52px);
+    line-height: 0.95;
+    margin: 8px 0 14px;
+  }
+  .share-body dl {
+    margin: 0;
+  }
+  .share-body dt {
+    margin-top: 12px;
+  }
+  .share-body dd {
+    margin: 0;
+  }
+  .share-body .line {
+    font-style: italic;
+    font-weight: 450;
+    font-size: 19px;
+  }
+  .share-body .actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 22px;
+  }
+  .share-body .cite {
+    margin-top: 22px;
+    font-size: 15px;
+    color: var(--mute);
+  }
+  .share-body ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+  .share-body li {
+    border-bottom: 1px solid var(--hair);
+    padding: 10px 0;
+  }
+  .share-body li a {
+    font-family: var(--display);
+    font-weight: 600;
+    font-stretch: 87%;
+    font-size: 17px;
+    line-height: 1.25;
+    display: inline-block;
+    min-height: 24px;
+  }
+</style>

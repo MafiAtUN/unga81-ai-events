@@ -23,6 +23,20 @@ export function wrap(text: string, maxChars: number): string[] {
   return lines;
 }
 
+/** Split a headline into two lines as evenly as possible. */
+export function twoLines(text: string): [string, string] {
+  const words = text.split(' ');
+  let best: [string, string] = [text, ''];
+  let score = Infinity;
+  for (let i = 1; i < words.length; i++) {
+    const a = words.slice(0, i).join(' ');
+    const b = words.slice(i).join(' ');
+    const m = Math.max(a.length, b.length);
+    if (m < score) [score, best] = [m, [a, b]];
+  }
+  return best;
+}
+
 /** Node keys: one node per item, plus one extra copy per additional theme (used in THEME mode). */
 export function nodeKeys(events: Item[]): { key: string; id: string; copy: number; theme: string | null }[] {
   const out: { key: string; id: string; copy: number; theme: string | null }[] = [];
@@ -47,7 +61,7 @@ export const FLOOR = {
   seatInner: 170,
   seatOuter: 290,
   /** The part of the frame shown on screen. */
-  crop: { x: 0, y: 540, w: 1080, h: 640 },
+  crop: { x: 0, y: 524, w: 1080, h: 656 },
 };
 
 export const polar = (r: number, deg: number) => ({ x: FLOOR.cx + r * Math.cos(rad(deg)), y: FLOOR.cy - r * Math.sin(rad(deg)) });
@@ -74,7 +88,7 @@ const FLOOR_CALLOUTS: { id: string; side: 'left' | 'top' | 'right'; x: number; y
   { id: 'e002', side: 'left', x: 64, y: 654, chars: 27 },
   { id: 'e005', side: 'left', x: 64, y: 763, chars: 27 },
   { id: 'e058', side: 'top', x: 676, y: 557, chars: 40 },
-  { id: 'e155', side: 'right', x: 1016, y: 604, chars: 34 },
+  { id: 'e155', side: 'right', x: 1016, y: 590, chars: 36 },
 ];
 
 export function floorLayout(events: Item[], debate: Statement[], meta: Meta, seatMode: SeatMode) {
@@ -163,7 +177,7 @@ export function floorLayout(events: Item[], debate: Statement[], meta: Meta, sea
     else if (n >= 5) head.push(`${n} ITEMS`);
     const lines = wrap(e.milestone!, c.chars);
     const target = items.get(c.id)!;
-    return { id: c.id, side: c.side, x: c.x, y: c.y, head: head.join('  '), lines, target, conv: e.conv, type: e.type };
+    return { id: c.id, side: c.side, x: c.x, y: c.y, head: head.join('\u00a0\u00a0'), lines, target, conv: e.conv, type: e.type };
   });
   const calloutDays = new Set(callouts.map((c) => byId.get(c.id)!.date));
   const tipLabels = tips.filter((t) => t.n >= 5 && !calloutDays.has(t.day));
@@ -208,7 +222,7 @@ export function pulseLayout(events: Item[], debate: Statement[], meta: Meta, W: 
   if (W < 900) {
     // Phones: one row per day, marks flow right in rows of up to 12.
     const pad = 16;
-    const labelW = 70;
+    const labelW = 92;
     const x0 = pad + labelW;
     const pitch = Math.min(22, (W - x0 - pad) / 12);
     const seatPitch = 10;
@@ -218,15 +232,16 @@ export function pulseLayout(events: Item[], debate: Statement[], meta: Meta, W: 
     let hlwBottom = 0;
     for (const d of days) {
       if (d === meta.high_level_week.from) {
-        labels.push({ text: `HIGH LEVEL WEEK  ${microDate(meta.high_level_week.from).split(' ')[0]} TO ${microDate(meta.high_level_week.to)}  ${st.hlw} ITEMS`, x: pad + 6, y: y + 14, cls: 'gold' });
-        hlwTop = y + 2;
-        y += 30;
+        labels.push({ text: 'HIGH LEVEL WEEK', x: x0 + 2, y: y + 16, cls: 'gold' });
+        labels.push({ text: `${day(meta.high_level_week.from)} TO ${microDate(meta.high_level_week.to)}  ${st.hlw} ITEMS`, x: x0 + 2, y: y + 32, cls: 'gold' });
+        hlwTop = y + 4;
+        y += 44;
       }
       const list = events.filter((e) => e.date === d).sort(sort);
       const rowsN = Math.max(1, Math.ceil(list.length / 12));
       const top = y;
       labels.push({ text: microDate(d), x: pad + 6, y: top + pitch / 2 + 4, cls: 'micro' });
-      if (list.length) labels.push({ text: String(list.length), x: x0 - 10, y: top + pitch / 2 + 4, anchor: 'end', cls: 'count' });
+      if (list.length) labels.push({ text: String(list.length), x: x0 - 12, y: top + pitch / 2 + 4, anchor: 'end', cls: 'count' });
       list.forEach((e, k) => items.set(e.id, { x: x0 + ((k % 12) + 0.5) * pitch, y: top + (Math.floor(k / 12) + 0.5) * pitch }));
       y = top + rowsN * pitch;
       for (const e of list.filter((e) => e.milestone)) {

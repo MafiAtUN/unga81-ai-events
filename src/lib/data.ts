@@ -91,20 +91,30 @@ export function dateOrder(events: Item[], meta: Meta): Item[] {
 }
 
 /**
- * Items a country convened or co hosted: the country name appears in `organisers`
- * as a whole phrase, and is not only part of a longer country name that also matches.
+ * Items a country convened or co hosted. Conservative on purpose: the country must be a whole
+ * organiser entry ("Estonia", "Republic of Croatia") or follow a government prefix
+ * ("Permanent Mission of", "Government of", "MFA of", "Co-chaired by" and similar).
+ * A name inside an organisation's name ("Brazil Talks") or in brackets does not count.
  */
-export function countryItems(country: string, allCountries: string[], events: Item[]): Item[] {
-  const re = (name: string) => new RegExp(`(^|[^\\p{L}])${fold(name).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}($|[^\\p{L}])`, 'u');
-  const longer = allCountries.filter((c) => c !== country && fold(c).includes(fold(country)));
-  const own = re(country);
-  return events.filter((e) => {
-    const text = fold(e.organisers);
-    if (!own.test(text)) return false;
-    let stripped = text;
-    for (const l of longer) stripped = stripped.replace(new RegExp(re(l).source, 'gu'), ' ');
-    return own.test(stripped);
-  });
+export function countryItems(country: string, _allCountries: string[], events: Item[]): Item[] {
+  const c = fold(country);
+  const lead = /^(co-?chaired by|co-?hosted by|hosted by|sponsored by|government co-?sponsors|co-?sponsors?|the)\s+/;
+  const gov = /^(permanent missions? of|government of|(federal )?ministry of [a-z ]+? of|mfa of|president of)( the)?\s+/;
+  const hit = (seg: string) => {
+    let t = seg.trim();
+    for (let prev = ''; prev !== t; ) {
+      prev = t;
+      t = t.replace(lead, '');
+    }
+    t = t.replace(gov, '');
+    return t === c || t === `republic of ${c}`;
+  };
+  return events.filter((e) =>
+    fold(e.organisers)
+      .replace(/\([^)]*\)?/g, ' ')
+      .split(/,|;|\band\b|\bwith\b/)
+      .some(hit),
+  );
 }
 
 /** Countries shown in the country search and pages: Member States and observers, never UN officials. */
