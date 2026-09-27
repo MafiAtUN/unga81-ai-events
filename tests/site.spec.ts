@@ -209,6 +209,7 @@ test('SAVE IMAGE produces a PNG at both sizes', async ({ page }, info) => {
   if (viaShare) {
     // iOS hands the file to the native share sheet. Capture what would be shared.
     await page.addInitScript(() => {
+      (navigator as unknown as { canShare: unknown }).canShare = () => true;
       (navigator as unknown as { share: unknown }).share = async (d: { files: File[] }) => {
         const bmp = await createImageBitmap(d.files[0]);
         (window as unknown as { __shared: unknown }).__shared = { name: d.files[0].name, w: bmp.width, h: bmp.height };
@@ -223,9 +224,15 @@ test('SAVE IMAGE produces a PNG at both sizes', async ({ page }, info) => {
     await page.getByRole('button', { name: label }).click();
     if (viaShare) {
       await page.evaluate(() => ((window as unknown as { __shared: unknown }).__shared = null));
+      const shared = page
+        .waitForFunction(() => (window as unknown as { __shared: unknown }).__shared, null, { timeout: 30000 })
+        .then(() => page.evaluate(() => (window as unknown as { __shared: unknown }).__shared));
+      const downloaded = page.waitForEvent('download', { timeout: 30000 }).then(async (dl) => {
+        const buf = readFileSync((await dl.path())!);
+        return { name: dl.suggestedFilename(), w: buf.readUInt32BE(16), h: buf.readUInt32BE(20) };
+      });
       await page.getByRole('button', { name: 'SAVE IMAGE' }).click();
-      await page.waitForFunction(() => (window as unknown as { __shared: unknown }).__shared, null, { timeout: 20000 });
-      const got = await page.evaluate(() => (window as unknown as { __shared: unknown }).__shared);
+      const got = await Promise.any([shared, downloaded]);
       expect(got).toEqual({ name: `unga81-ai-floor-${w}x${h}.png`, w, h });
       continue;
     }
