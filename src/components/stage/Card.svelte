@@ -9,6 +9,7 @@
     $props();
 
   let heading = $state<HTMLHeadingElement | null>(null);
+  let root = $state<HTMLDivElement | null>(null);
   let shared = $state('');
   let cited = $state(false);
   const sheet = $derived(coarse || !wide);
@@ -18,7 +19,10 @@
     item.id;
     shared = '';
     cited = false;
-    queueMicrotask(() => heading?.focus({ preventScroll: true }));
+    queueMicrotask(() => {
+      heading?.focus({ preventScroll: true });
+      root?.scrollTo({ top: 0 });
+    });
   });
 
   async function share() {
@@ -43,6 +47,12 @@
       onclose();
     }
   }
+  // Escape closes the card even when focus has moved back to the chart
+  function winkey(ev: KeyboardEvent) {
+    if (ev.key !== 'Escape' || document.querySelector('[aria-modal="true"]')) return;
+    if ((ev.target as Element | null)?.closest?.('[role="dialog"], .filters')) return;
+    onclose();
+  }
   let sx: number | null = null;
   let sy = 0;
   function tstart(ev: TouchEvent) {
@@ -59,7 +69,10 @@
   const lab = M.label;
 </script>
 
+<svelte:window onkeydown={winkey} />
+
 <div
+  bind:this={root}
   class="card"
   class:sheet
   role="dialog"
@@ -146,7 +159,18 @@
     border-top: 1px solid var(--hair);
     padding: 8px 16px 24px;
   }
+  .sheet .bar {
+    top: -8px;
+    margin: -8px -16px 0;
+    padding: 8px 16px 8px;
+  }
   .bar {
+    position: sticky;
+    top: -12px;
+    z-index: 1;
+    margin: -12px -20px 0;
+    padding: 12px 20px 8px;
+    background: var(--panel);
     display: flex;
     justify-content: space-between;
     align-items: center;
